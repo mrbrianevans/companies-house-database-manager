@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/mrbrianevans/companies-house-database-manager#readme",
   "dependencies": {
-    "csv-parser": "^3.0.0"
+    "csv-parser": "^3.0.0",
+    "pg": "^8.5.1"
   }
 }
