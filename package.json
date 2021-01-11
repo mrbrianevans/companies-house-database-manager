@@ -1,0 +1,22 @@
+{
+  "name": "companies-house-database-manager",
+  "version": "1.0.0",
+  "description": "Upload CSV data to the Postgres database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrbrianevans/companies-house-database-manager.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mrbrianevans/companies-house-database-manager/issues"
+  },
+  "homepage": "https://github.com/mrbrianevans/companies-house-database-manager#readme",
+  "dependencies": {
+    "csv-parser": "^3.0.0"
+  }
+}
