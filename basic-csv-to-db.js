@@ -20,7 +20,7 @@ const readJson = async(filename) => {
 
     const sqlQuery = "INSERT INTO companies (name, number, streetAddress, county, country, postCode, category, status, origin, date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TO_TIMESTAMP($10, 'DD/MM/YYYY')) ON CONFLICT (number) DO NOTHING;"
 
-    const companies = []
+    let companies = 0
     console.time('Parse data')
     fs.createReadStream(filename)
       .pipe(csv({
@@ -29,14 +29,15 @@ const readJson = async(filename) => {
       .on('data', async(data) => {
           await client.query(sqlQuery, Object.values(data).slice(0,10), (err, res)=>{
               if(err) console.log(err)
-              else companies.push(data)
-          })
-          console.timeLog('Parse data', `${companies.length} companies parsed`)
+              else companies++
+          
+      //    console.timeLog('Parse data', `${companies} companies parsed`)
+	  })
       })
       .on('end', () => {
         // console.log(companies);
-        console.timeEnd('Parse data')
-          console.log(`Uploaded ${companies.length} companies`)
+        //console.timeEnd('Parse data')
+          console.log(`Uploaded ${companies} companies`)
 //        client.end()
 //	      console.log("Connection with database ended")
       });
@@ -50,10 +51,11 @@ const readJson = async(filename) => {
 	setTimeout(()=>{
 		client.end()
 		console.log("Ended connected to db")
-	}, 1000)
+		console.timeEnd("Parse data")
+	}, 60*60*1000)//disconnect after 1 hour
 }
-
-readJson('basic-sample.csv')
+const path = require('path')
+readJson(path.resolve(__dirname, process.argv[2]))
 
 const headerMapper = {
     CompanyName: 'name',
