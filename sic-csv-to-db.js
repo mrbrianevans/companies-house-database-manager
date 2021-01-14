@@ -32,7 +32,6 @@ const readCSV = async(filename) => {
       .on('end', () => {
         // console.log(sic_codes);
         //console.timeEnd('Parse data')
-          console.log(`Uploaded ${sic_codes} companies`)
 //        client.end()
 //	      console.log("Connection with database ended")
       });
@@ -45,6 +44,7 @@ const readCSV = async(filename) => {
     }
 	setTimeout(()=>{
 		client.end()
+      console.log(`Uploaded ${sic_codes} companies`)
 		console.log("Ended connected to db")
 		console.timeEnd("Parse data")
 	}, 60*1000)//disconnect after 1 minute
