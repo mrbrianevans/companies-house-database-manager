@@ -41,7 +41,7 @@ const fileReadStream = fs.createReadStream(filename)
           fileReadStream.pause() // pause reading while database upload takes place
           await client.query(companyQuery, Object.values(data).slice(0,10))
               .then(async(res)=>{
-                  
+
                       const sicOne = data.SicCode1.match(/^[0-9]{5}/)
                       if(sicOne)
                         await client.query(sicQuery, [data.number, sicOne[0]]).catch(err=>{if(err) sic_errors++})
@@ -54,25 +54,27 @@ const fileReadStream = fs.createReadStream(filename)
                       if(sicThree)
                         await client.query(sicQuery, [data.number, sicThree[0]]).catch(err=>{if(err) sic_errors++})
 
-                      const sicFour = data.SicCode4.match(/^[0-9]{5}/)
-                      if(sicFour)
-                        await client.query(sicQuery, [data.number, sicFour[0]]).catch(err=>{if(err) sic_errors++})
+                  const sicFour = data.SicCode4.match(/^[0-9]{5}/)
+                  if (sicFour)
+                      await client.query(sicQuery, [data.number, sicFour[0]]).catch(err => {
+                          if (err) sic_errors++
+                      })
 
-                      companies++
-                  
+                  companies++
+
 //     	    console.timeLog('Parse data', `${companies} companies parsed`)
-          }).catch(err=>company_errors++)
+              }).catch(err => company_errors++)
           fileReadStream.resume()
       })
-      .on('end', () => {
+    .on('end', async () => {
         // console.log(companies);
-	      clearInterval(progressUpdater)
+        clearInterval(progressUpdater)
         console.timeEnd('Parse data')
-	      console.log(`${sic_errors} errors with inserting SIC codes`)
-          console.log(`Uploaded ${companies} companies`)
-       client.end()
-	      console.log("Connection with database ended")
-      });
+        console.log(`${sic_errors} errors with inserting SIC codes`)
+        console.log(`Uploaded ${companies} companies`)
+        await client.end()
+        console.log("Connection with database ended")
+    });
     }catch (e) {
         console.log(e)
 
