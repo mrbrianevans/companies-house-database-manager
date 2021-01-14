@@ -26,13 +26,13 @@ const readJson = async(filename) => {
     console.time('Parse data')
 const startTime = Date.now()
 const progressUpdater =  setInterval(()=>{
-		// report on progress
-		 process.stdout.clearLine()
-		    process.stdout.cursorTo(0)
-	let timeTaken = Date.now()-startTime
-	let message = `${Math.floor(timeTaken/1000)}s Progress: \x1b[32m${companies} OK\x1b[0m companies, \x1b[31m${sic_errors} ERR\x1b[0m sics, \x1b[31m${company_errors} ERR\x1b[0m companies, AVERAGE SPEED: \x1b[36m${Math.round(companies/timeTaken*1000)/1000}ms\x1b[0m per company`
-		    process.stdout.write(message)
-	    }, 1000)
+    // report on progress
+    process.stdout.clearLine()
+    process.stdout.cursorTo(0)
+    let timeTaken = Date.now() - startTime
+    let message = `${Math.floor(timeTaken / 1000)}s Progress: \x1b[32m${companies} OK\x1b[0m companies, \x1b[31m${sic_errors} ERR\x1b[0m sics, \x1b[31m${company_errors} ERR\x1b[0m companies, AVERAGE SPEED: \x1b[36m${Math.round(timeTaken / companies * 1000) / 1000}ms\x1b[0m per company`
+    process.stdout.write(message)
+}, 1000)
 const fileReadStream = fs.createReadStream(filename)
       .pipe(csv({
           mapHeaders: ({header, index})=> headerMapper[header.trim()]||null
