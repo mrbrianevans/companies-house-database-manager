@@ -40,22 +40,23 @@ const processHtmlFile = async (xbrlFilename) => {
         const csvReadStream = fs.createReadStream(csvFilename)
           .pipe(csv({mapHeaders: ({header}) => csvHeaders[header.trim()] || null}))
           .on('data', async (data) => {
-              await csvReadStream.pause()
-              for (let csvHeader in data) {
-                  if (data[csvHeader] == '' || data[csvHeader] === '(reported)') delete data[csvHeader]
-              }
-              if (data.decimals === 'INF') data.decimals = 0
-            data.company_number = data.company_number.padStart(8, '0')
-              if (data.value) { // dont insert null values or (reported) values
-                  if (!isNaN(data.value.replace(',', ''))) data.value = data.value.replace(',', '') // remove commas for type casting in postgres
-                  //on conflict, it will add the second value to the end of the original value. this is for directors name etc. DO NOT RUN THE SAME FILE THROUGH TWICE, IT WILL RUIN IT
-                  const accountsInsertSql = `INSERT INTO accounts (${Object.keys(data).toString()}) VALUES (${Array(Object.keys(data).length).fill('$').map((e, i) => ('$' + (i + 1)))}) ON CONFLICT ON CONSTRAINT accounts_pkey DO NOTHING;` // for updating to a list use: UPDATE SET value=EXCLUDED.value||';'||accounts.value
-                  // console.log('SQL QUERY: '+ accountsInsertSql)
-                  await client.query(accountsInsertSql, Object.values(data))
-                    .catch(e => {
-                        console.error("Error", e.message, "occured when querying ", accountsInsertSql, Object.values(data))
-                    })
-              }
+            await csvReadStream.pause()
+            for (let csvHeader in data) {
+              if (data[csvHeader] == '' || data[csvHeader] === '(reported)') delete data[csvHeader]
+            }
+            if (data.decimals === 'INF') data.decimals = 0
+            // data.company_number = data.company_number.padStart(8, '0')
+            data.company_number = companyNumber // use the company number from file name because for some reason some accounts dont list it apparently
+            if (data.value) { // dont insert null values or (reported) values
+              if (!isNaN(data.value.replace(',', ''))) data.value = data.value.replace(',', '') // remove commas for type casting in postgres
+              //on conflict, it will add the second value to the end of the original value. this is for directors name etc. DO NOT RUN THE SAME FILE THROUGH TWICE, IT WILL RUIN IT
+              const accountsInsertSql = `INSERT INTO accounts (${Object.keys(data).toString()}) VALUES (${Array(Object.keys(data).length).fill('$').map((e, i) => ('$' + (i + 1)))}) ON CONFLICT ON CONSTRAINT accounts_pkey DO NOTHING;` // for updating to a list use: UPDATE SET value=EXCLUDED.value||';'||accounts.value
+              // console.log('SQL QUERY: '+ accountsInsertSql)
+              await client.query(accountsInsertSql, Object.values(data))
+                .catch(e => {
+                  console.error("Error", e.message, "occured when querying ", accountsInsertSql, Object.values(data))
+                })
+            }
               await csvReadStream.resume()
           })
           .on('end', async () => {
