@@ -24,6 +24,7 @@ const processHtmlFile = async (xbrlFilename) => {
           resolve('skip') // proceed no further if the file has already been scanned, becuase new inputs are appended
             return;
         } else {
+              await client.query("INSERT INTO accounts_scanned (filename, company_number, accounts_date, status) VALUES ($1, $2, $3, 'busy');", [shortFileName, companyNumber, new Date(year, Number(month) - 1, day)])
             // console.log("Found", alreadyScannedFile, "copies of this filing in accounts_scanned for", companyNumber)
         }
         const csvFolder = path.resolve(xbrlFilename, '..', '..', '..', 'facts', dateFolder)
@@ -47,7 +48,7 @@ const processHtmlFile = async (xbrlFilename) => {
             if (data.decimals === 'INF') data.decimals = 0
             // data.company_number = data.company_number.padStart(8, '0')
             data.company_number = companyNumber // use the company number from file name because for some reason some accounts dont list it apparently
-            if (data.value) { // dont insert null values or (reported) values
+            if (data.value && data.company_number && data.name) { // dont insert null values or (reported) values
               if (!isNaN(data.value.replace(',', ''))) data.value = data.value.replace(',', '') // remove commas for type casting in postgres
               //on conflict, it will add the second value to the end of the original value. this is for directors name etc. DO NOT RUN THE SAME FILE THROUGH TWICE, IT WILL RUIN IT
               const accountsInsertSql = `INSERT INTO accounts (${Object.keys(data).toString()}) VALUES (${Array(Object.keys(data).length).fill('$').map((e, i) => ('$' + (i + 1)))}) ON CONFLICT ON CONSTRAINT accounts_pkey DO NOTHING;` // for updating to a list use: UPDATE SET value=EXCLUDED.value||';'||accounts.value
@@ -60,9 +61,11 @@ const processHtmlFile = async (xbrlFilename) => {
               await csvReadStream.resume()
           })
           .on('end', async () => {
-              await client.query("INSERT INTO accounts_scanned (filename, company_number, accounts_date) VALUES ($1, $2, $3);", [shortFileName, companyNumber, new Date(year, Number(month) - 1, day)])
-              await client.release()
-              resolve('processed')
+            await client.query("UPDATE accounts_scanned SET status='finished', time_finished=current_timestamp WHERE filename=$1 AND company_number=$2 AND accounts_date=$3;", [shortFileName, companyNumber, new Date(year, Number(month) - 1, day)])
+            // await client.query("NOTIFY finished_accounts;")
+  
+            await client.release()
+            resolve('processed')
           })
           .on('error', (e) => reject(e))
         
