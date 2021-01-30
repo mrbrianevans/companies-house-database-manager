@@ -20,7 +20,8 @@ const processHtmlFile = async (xbrlFilename) => {
         const [shortFileName] = xbrlFilename.match(/Prod223_[0-9]{4}_[A-Z0-9]{8}_[0-9]{4}[0-9]{2}[0-9]{2}.(xml|html)$/)
         const {rowCount: alreadyScannedFile} = await client.query("SELECT * FROM accounts_scanned WHERE filename=$1", [shortFileName])
         if (alreadyScannedFile) {
-            resolve('skip') // proceed no further if the file has already been scanned, becuase new inputs are appended
+            await client.release()
+          resolve('skip') // proceed no further if the file has already been scanned, becuase new inputs are appended
             return;
         } else {
             // console.log("Found", alreadyScannedFile, "copies of this filing in accounts_scanned for", companyNumber)
