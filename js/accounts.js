@@ -23,7 +23,7 @@ const processHtmlFile = async (xbrlFilename) => {
             resolve('skip') // proceed no further if the file has already been scanned, becuase new inputs are appended
             return;
         } else {
-            console.log("Found", alreadyScannedFile, "copies of this filing in accounts_scanned for", companyNumber)
+            // console.log("Found", alreadyScannedFile, "copies of this filing in accounts_scanned for", companyNumber)
         }
         const csvFolder = path.resolve(xbrlFilename, '..', '..', '..', 'facts', dateFolder)
         if (!fs.existsSync(csvFolder)) fs.mkdirSync(csvFolder)
@@ -44,6 +44,7 @@ const processHtmlFile = async (xbrlFilename) => {
                   if (data[csvHeader] == '' || data[csvHeader] === '(reported)') delete data[csvHeader]
               }
               if (data.decimals === 'INF') data.decimals = 0
+            data.company_number = data.company_number.padStart(8, '0')
               if (data.value) { // dont insert null values or (reported) values
                   if (!isNaN(data.value.replace(',', ''))) data.value = data.value.replace(',', '') // remove commas for type casting in postgres
                   //on conflict, it will add the second value to the end of the original value. this is for directors name etc. DO NOT RUN THE SAME FILE THROUGH TWICE, IT WILL RUIN IT
