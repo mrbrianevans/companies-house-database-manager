@@ -112,7 +112,7 @@ const processHtmlFile = async (xbrlFilename) => {
     const csvFolder = path.resolve(filename, '..', '..', '..', 'facts', dateFolder)
     const csvFilename = path.resolve(csvFolder, companyNumber + '.csv')
     if (fs.existsSync(csvFilename)) {
-      fs.unlinkSync(filename) // delete the XRBL file if the CSV already exists
+      // fs.unlinkSync(filename) // delete the XRBL file if the CSV already exists
       filesSkipped++
       continue;
     }

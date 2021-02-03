@@ -21,6 +21,9 @@ const StreamCompanies = async () => {
         switch (r.statusCode) {
           case 200:
             console.time("Listening on company stream")
+            setTimeout(()=>{
+              process.exit() //will exit after 24 hours to be restarted
+            }, 1000*60*60*24)
             setInterval(() => {
               console.timeLog("Listening on company stream", `Reset comp stats after ${qtyOfNotifications} notifications`)
               // reset stats every hour
@@ -74,11 +77,17 @@ const StreamCompanies = async () => {
                 date: new Date(jsonObject.data.date_of_creation)
                 // sicCodes: jsonObject.data.sic_codes,
               }
+              
               const {
                 rows: companyFromDatabase,
                 rowCount: companiesFoundInDatabase
               } = await pool.query('SELECT * FROM companies WHERE number=$1', [jsonObject.data.company_number])
-              
+              //attempt to insert all companies, and if it already exists then update its details.
+               await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) " +
+                 "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) " +
+                 "ON CONFLICT (number) DO UPDATE SET name=$1, streetaddress=$3, county=$4, country=$5, postcode=$6, category=$7, status=$9;",
+                 Object.values(companyFromStream))
+                   .catch(e => console.error("Could not insert company into database", e.toString()))
               if (companiesFoundInDatabase) {
                 // compare details to see what changed
                 const differences = {}
@@ -107,6 +116,9 @@ const StreamCompanies = async () => {
                   .catch(e => console.error("Could not insert event into database", e.toString()))
                 // if (Object.keys(differences).length > 0) {
                 //   if (differences['streetaddress'] && differences['postcode'])
+                //     await pool.query("UPDATE companies SET streetaddress=$1, county=$2, country=$3, postcode=$4 WHERE number=$5",
+                //       [companyFromStream.streetaddress, companyFromStream.county, companyFromStream.country, companyFromStream.postcode, companyFromStream.number])
+                // }
                 //     console.log("Address changed from ", companyFromDatabase[0].streetaddress, 'to', companyFromStream.streetaddress)
                 //   else console.log("Differences found in company", companyFromStream.number, differences)
                 // } else console.log("No differences found between stream and database for company", companyFromStream.number)
@@ -116,9 +128,8 @@ const StreamCompanies = async () => {
                   [jsonObject.resource_id, companyFromStream.number, [], jsonObject.event.published_at, jsonObject, true, jsonObject.event.timepoint])
                   .catch(e => console.error("Could not insert event into database", e.toString()))
                 // insert this company
-                await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", Object.values(companyFromStream))
-                  // await pool.query("INSERT INTO companies ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) VALUES ($11, $12, $13, $14, $15, $16, $17, $18, $19, $20)", [...Object.keys(companyFromStream), ...Object.values(companyFromStream)])
-                  .catch(e => console.error("Could not insert company into database", e.toString()))
+                // await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", Object.values(companyFromStream))
+                  // .catch(e => console.error("Could not insert company into database", e.toString()))
               }
             } catch (e) {
               if (e instanceof SyntaxError)
