@@ -7,11 +7,15 @@ let averageProcessingTime = 0
 let startTime = Date.now()
 const StreamCompanies = async () => {
   {
-    let pool = new Pool({
-      ssl: {
-        rejectUnauthorized: false
-      }
-    })
+    let pool = new Pool(
+      {
+    host: process.env.PG_HOST,
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD,
+    database: process.env.PG_DATABASE,
+    port: Number(process.env.PG_PORT)
+  }
+    )
     let dataBuffer = ''
     let {rows: latestTimepointRow} = await pool.query('SELECT timepoint FROM company_events ORDER BY timepoint DESC LIMIT 1;')
     const reqStream = request.get('https://stream.companieshouse.gov.uk/companies?timepoint=' + latestTimepointRow[0].timepoint)
@@ -111,8 +115,8 @@ const StreamCompanies = async () => {
                       break;
                   }
                 }
-                await pool.query("INSERT INTO company_events (id, company_number, fields_changed, published, event, new, timepoint) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                  [jsonObject.resource_id, companyFromStream.number, differences, jsonObject.event.published_at, jsonObject, false, jsonObject.event.timepoint])
+                await pool.query("INSERT INTO company_events (id, company_number, fields_changed, published, new, timepoint) VALUES ($1, $2, $3, $4, $5, $6)",
+                  [jsonObject.resource_id, companyFromStream.number, differences, jsonObject.event.published_at, false, jsonObject.event.timepoint])
                   .catch(e => console.error("Could not insert event into database", e.toString()))
                 // if (Object.keys(differences).length > 0) {
                 //   if (differences['streetaddress'] && differences['postcode'])
@@ -124,8 +128,8 @@ const StreamCompanies = async () => {
                 // } else console.log("No differences found between stream and database for company", companyFromStream.number)
               } else {
                 // console.log("Potential new company? ", companyFromStream.number, companyFromStream.date)
-                await pool.query("INSERT INTO company_events (id, company_number, fields_changed, published, event, new, timepoint) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                  [jsonObject.resource_id, companyFromStream.number, [], jsonObject.event.published_at, jsonObject, true, jsonObject.event.timepoint])
+                await pool.query("INSERT INTO company_events (id, company_number, fields_changed, published, new, timepoint) VALUES ($1, $2, $3, $4, $5, $6)",
+                  [jsonObject.resource_id, companyFromStream.number, null, jsonObject.event.published_at, true, jsonObject.event.timepoint])
                   .catch(e => console.error("Could not insert event into database", e.toString()))
                 // insert this company
                 // await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", Object.values(companyFromStream))

@@ -17,10 +17,12 @@ fs.writeFileSync(path.resolve(__dirname, 'filingEventLogs.txt'), 'Started at ' +
 const StreamFilings = async () => {
     {
         let pool = new Pool({
-            ssl: {
-                rejectUnauthorized: false
-            }
-        })
+    host: process.env.PG_HOST,
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD,
+    database: process.env.PG_DATABASE,
+    port: Number(process.env.PG_PORT)
+  })
         let dataBuffer = ''
         let {rows: latestTimepointRow} = await pool.query('SELECT timepoint FROM filing_events ORDER BY timepoint DESC LIMIT 1;')
         console.log("Starting from timepoint", latestTimepointRow[0].timepoint)
