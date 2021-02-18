@@ -1,0 +1,18 @@
+{
+  "name": "csv-accounts-to-db",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "tsc && gcloud functions deploy csv-accounts-to-db --region=europe-west1 --trigger-bucket=filter-facility-accounts"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.28",
+    "@types/pg": "^7.14.10",
+    "typescript": "^4.1.5"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^5.8.0",
+    "csv-parser": "^3.0.0",
+    "pg": "^8.5.1"
+  }
+}

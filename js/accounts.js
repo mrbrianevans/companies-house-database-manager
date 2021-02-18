@@ -71,9 +71,13 @@ const processHtmlFile = async (xbrlFilename) => {
             await csvReadStream.resume()
           })
           .on('end', async () => {
-            await pool.query("UPDATE accounts_scanned SET status='finished', time_finished=current_timestamp WHERE filename=$1 AND company_number=$2 AND accounts_date=$3;", [shortFileName, companyNumber, new Date(year, Number(month) - 1, day)])
-            // await client.query("NOTIFY finished_accounts;")
-            // console.timeEnd("Processing " + companyNumber)
+            await pool.query(`UPDATE accounts_scanned
+                              SET status='finished',
+                                  time_finished=current_timestamp
+                              WHERE filename = $1
+                                AND company_number = $2
+                                AND accounts_date = $3;`,
+              [shortFileName, companyNumber, new Date(year, Number(month) - 1, day)])
             resolve('processed')
           })
           .on('error', (e) => reject(e))

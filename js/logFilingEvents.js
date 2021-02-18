@@ -88,9 +88,9 @@ const StreamFilings = async () => {
                           // query enumeration map in database to figure out what the company has filed
                           // slow down the stream and send more meaningful information in teh notification
                           let {
-                              rows: companyProfile,
-                              rowCount: companysFound
-                          } = await client.query("SELECT * FROM companies WHERE number=$1 LIMIT 1", [companyNumber])
+                            rows: companyProfile,
+                            rowCount: companysFound
+                          } = await client.query("SELECT * FROM companies WHERE number=$1", [companyNumber])
                           
                           const {
                               rows: descriptions,
