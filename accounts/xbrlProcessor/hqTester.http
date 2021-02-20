@@ -1,0 +1,7 @@
+GET http://localhost:3000/next
+
+###
+
+GET http://localhost:3000/
+
+###
