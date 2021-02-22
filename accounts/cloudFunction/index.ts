@@ -9,7 +9,7 @@ import {Pool} from 'pg'
  * @param {!Object} context Metadata for the event.
  */
 const uploadCsvToDb = (event, context) => {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(async (resolve, reject) => {
         const gcsEvent = event;
         console.log(`Processing file: ${gcsEvent.name}`);
         const storage = new Storage()
@@ -30,11 +30,13 @@ const uploadCsvToDb = (event, context) => {
             port: 5432,
             database: 'postgres'
         })
+        const facts = []
+        const longFacts = []
         const csvReadStream = uploadedFile
             .createReadStream()
             .pipe(csv({mapHeaders: ({header}) => csvHeaders[header.trim()] || null}))
-            .on('data', async (data) => {
-                await csvReadStream.pause()
+            .on('data', (data) => {
+                // await csvReadStream.pause()
                 // dont insert null values or (reported) values
                 for (let csvHeader in data)
                     if (data[csvHeader] == '' || data[csvHeader] === '(reported)') delete data[csvHeader]
@@ -43,21 +45,23 @@ const uploadCsvToDb = (event, context) => {
                 if (data.value && data.company_number && data.name && data.context_ref) {
                     // remove commas for type casting in postgres
                     if (!isNaN(data.value.replace(',', '').trim())) data.value = data.value.replace(',', '').trim()
-                    const accountsInsertSql = `
-                    INSERT INTO accounts (${Object.keys(data).toString()}) 
-                    VALUES (${Array(Object.keys(data).length).fill('$').map((e, i) => ('$' + (i + 1)))}) 
-                    ON CONFLICT ON CONSTRAINT accounts_pkey DO
-                    ${isNaN(data.value) ? 'NOTHING' :
-                        'UPDATE SET value = CASE WHEN ABS(excluded.value::numeric) > ABS(accounts.value::numeric) THEN excluded.value ELSE accounts.value END'};`
-                    //this update should put the biggest absolute value in the accounts table
-                    await pool.query(accountsInsertSql, Object.values(data))
-                        .catch(e => {
-                            console.error("Error",
-                                e.message, "occured when inserting", data.value)
-                            // accountsInsertSql, Object.values(data))
-                        })
+                    if (data.value.length + data.label.length < 2000) facts.push(data)
+                    else longFacts.push(data)
+                    // const accountsInsertSql = `
+                    // INSERT INTO accounts (${Object.keys(data).toString()})
+                    // VALUES (${Array(Object.keys(data).length).fill('$').map((e, i) => ('$' + (i + 1)))})
+                    // ON CONFLICT ON CONSTRAINT accounts_pkey DO
+                    // ${isNaN(data.value) ? 'NOTHING' :
+                    //     'UPDATE SET value = CASE WHEN ABS(excluded.value::numeric) > ABS(accounts.value::numeric) THEN excluded.value ELSE accounts.value END'};`
+                    // //this update should put the biggest absolute value in the accounts table
+                    // await pool.query(accountsInsertSql, Object.values(data))
+                    //     .catch(e => {
+                    //         console.error("Error",
+                    //             e.message, "occured when inserting", data.value)
+                    //         // accountsInsertSql, Object.values(data))
+                    //     })
                 }
-                await csvReadStream.resume()
+                // await csvReadStream.resume()
             })
             .on('end', async () => {
                 //this would only work if the arelle processors have database access
@@ -67,9 +71,31 @@ const uploadCsvToDb = (event, context) => {
                 // archive it when finished processing
                 await uploadedFile.move(storage.bucket('filter-facility-accounts-csv-archive'))
                     .catch(e => console.error("Failed to archive", filename, 'due to', e.message))
-                resolve()
+                // resolve()
             })
             .on('error', (e) => reject(e.message))
+        // const multipleQuery = `
+        // INSERT INTO accounts (company_number, name, label, context_ref, value, start_date, end_date, unit, decimals)
+        // VALUES ($1, $2, $3...);
+        // `
+        // pool.query(multipleQuery, facts, (e)=>resolve(e))
+        for (const fact of facts) {
+            const accountsInsertSql = `
+            INSERT INTO accounts (${Object.keys(fact).toString()})
+            VALUES (${Array(Object.keys(fact).length).fill('$').map((e, i) => ('$' + (i + 1)))})
+            ON CONFLICT ON CONSTRAINT accounts_pkey DO
+            ${isNaN(fact.value) ? 'NOTHING' :
+                'UPDATE SET value = CASE WHEN ABS(excluded.value::numeric) > ABS(accounts.value::numeric) THEN excluded.value ELSE accounts.value END'};`
+            //this update should put the biggest absolute value in the accounts table
+            await pool.query(accountsInsertSql, Object.values(fact))
+                .catch(e => {
+                    console.error("Error",
+                        e.message, "occurred when inserting", fact.value)
+                })
+        }
+        //todo: very long facts here
+
+        await pool.end()
     })
 };
 

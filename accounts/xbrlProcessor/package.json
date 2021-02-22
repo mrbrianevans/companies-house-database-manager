@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node run"
+    "start": "node headquarters D:\\CompaniesHouse/unzipped/2020-11-30",
+    "worker": "node processFolder"
   }
 }
