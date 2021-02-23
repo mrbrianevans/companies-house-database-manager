@@ -22,7 +22,7 @@ export const processHtmlFile = async (xbrlFilename) => {
             try {
                 const bucket = new Storage().bucket('filter-facility-accounts')
                 await bucket.upload(csvFilename, {contentType: 'application/csv'})
-                    .then(() => fs.unlinkSync(csvFilename)).catch(console.error)
+                    .then(() => fs.unlinkSync(csvFilename))
                 fs.unlinkSync(xbrlFilename)
                 resolve(csvFilename)
             } catch (e) {
@@ -30,7 +30,7 @@ export const processHtmlFile = async (xbrlFilename) => {
             }
 
         } else {
-            reject('CSV file not found')
+            reject('CSV file not found - ' + companyNumber)
         }
     })
 }

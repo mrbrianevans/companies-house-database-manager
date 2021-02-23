@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node headquarters D:\\CompaniesHouse/unzipped/2020-11-30",
-    "worker": "node processFolder"
+    "start": "node headquarters C:\\Users\\bme\\PycharmProjects\\companies-house-database-manager\\samples\\financials\\zipped\\2020-12-31 5000",
+    "worker": "node processFolder 5000"
   }
 }

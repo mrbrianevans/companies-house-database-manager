@@ -1,9 +1,9 @@
 import {processHtmlFile} from './processFile'
 
 const axios = require("axios").default;
-
+const baseUrl = 'http://localhost:' + (process.argv[2] || 3000)
 const processNextFile = async () => {
-    const nextFileRequest = await axios.get('http://localhost:3000/next')
+    const nextFileRequest = await axios.get(baseUrl + '/next')
     if (nextFileRequest.status !== 200) {
         await new Promise<void>((resolve => setTimeout(resolve, 3000)))
         return; // wait three seconds and go back to the start of while loop
@@ -27,12 +27,16 @@ const runCore = async () => {
                         core: process.pid,
                         timestamp: Date.now()
                     }
-                    await axios.post('http://localhost:3000/finished',
+                    await axios.post(baseUrl + '/finished',
                         JSON.stringify(fileMetadata))
                 }
             })
             .catch(async e => {
-                await axios.post('http://localhost:3000/error', JSON.stringify(e))
+                let errorDetails = {
+                    message: e,
+                    timestamp: Date.now()
+                }
+                await axios.post(baseUrl + '/error', JSON.stringify(errorDetails))
             })
     }
 }

@@ -105,7 +105,7 @@ const uploadCsvToDb = async (event, context) => {
     await pool.query(`INSERT INTO accounts_scanned (company_number, accounts_date, csv_scanned,
                                                     number_of_facts, number_of_long_facts)
                       VALUES ($1, $2, current_timestamp, $3, $4);`,
-        [companyNumber, balanceSheetDate, factsInserted, longFactsInserted])
+        [companyNumber, balanceSheetDate || new Date().toLocaleDateString(), factsInserted, longFactsInserted])
     await pool.end()
 };
 
