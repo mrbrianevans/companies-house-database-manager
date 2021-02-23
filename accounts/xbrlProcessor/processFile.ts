@@ -5,9 +5,9 @@ import {Storage} from '@google-cloud/storage'
 
 export const processHtmlFile = async (xbrlFilename) => {
     return new Promise(async (resolve, reject) => {
-        const [, dateFolder, companyNumber] = xbrlFilename.match(/.([0-9]{4}-[0-9]{2}-[0-9]{2}).Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/)
+        const [, dateFolder, companyNumber, year, month, day] = xbrlFilename.match(/.([0-9]{4}-[0-9]{2}-[0-9]{2}).Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/)
         const csvFolder = path.resolve(xbrlFilename, '..', '..', '..', 'facts', dateFolder)
-        const csvFilename = path.resolve(csvFolder, companyNumber + '.csv')
+        const csvFilename = path.resolve(csvFolder, companyNumber + '_' + year + '-' + month + '-' + day + '.csv')
         if (fs.existsSync(csvFilename)) resolve('skipped')
         if (!fs.existsSync(csvFolder)) fs.mkdirSync(csvFolder)
         const os = process.platform
@@ -24,7 +24,7 @@ export const processHtmlFile = async (xbrlFilename) => {
                 await bucket.upload(csvFilename, {contentType: 'application/csv'})
                     .then(() => fs.unlinkSync(csvFilename)).catch(console.error)
                 fs.unlinkSync(xbrlFilename)
-                resolve()
+                resolve(csvFilename)
             } catch (e) {
                 reject(e.message)
             }
