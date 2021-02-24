@@ -83,12 +83,28 @@ const uploadCsvToDb = async (event, context) => {
             fact.value, fact.start_date, fact.end_date, fact.unit, fact.decimals])
         .filter(value => value !== undefined)
     let multiInsertError = undefined
+    const insertFactsStartTime = Date.now()
     await pool.query('INSERT INTO companies (number) VALUES ($1) ON CONFLICT DO NOTHING;', [companyNumber])
     await pool.query(multipleQuery, multipleValues)
         .catch(e => multiInsertError = e.message)
-    let factsInserted = multiInsertError ? 0 : facts.length, longFactsInserted = 0,
-        insertFactsStartTime = Date.now();
-
+    let factsInserted = multiInsertError ? 0 : facts.length, longFactsInserted = 0
+    if (factsInserted == 0) {
+        for (const fact of facts) {
+            const accountsInsertSql = `
+            INSERT INTO accounts (${Object.keys(fact).toString()})
+            VALUES (${Array(Object.keys(fact).length).fill('$').map((e, i) => ('$' + (i + 1)))})
+            ON CONFLICT ON CONSTRAINT accounts_pkey DO
+            ${isNaN(fact.value) ? 'NOTHING' :
+                'UPDATE SET value = CASE WHEN ABS(excluded.value::numeric) > ABS(accounts.value::numeric) THEN excluded.value ELSE accounts.value END'};`
+            //this update should put the biggest absolute value in the accounts table
+            await pool.query(accountsInsertSql, Object.values(fact))
+                .then(() => factsInserted++)
+                .catch(e => {
+                    console.error("Error",
+                        e.message, "occurred when inserting", fact.value)
+                })
+        }
+    }
     for (const fact of longFacts) {
         const accountsInsertSql = `
             INSERT INTO very_long_accounts (${Object.keys(fact).toString()})

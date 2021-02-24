@@ -20,9 +20,12 @@ export const processHtmlFile = async (xbrlFilename) => {
         if (fs.existsSync(csvFilename)) {
             //upload the csv to Storage bucket, and delete it locally (xbrl and csv)
             try {
-                const bucket = new Storage().bucket('filter-facility-accounts')
-                await bucket.upload(csvFilename, {contentType: 'application/csv'})
-                    .then(() => fs.unlinkSync(csvFilename))
+                const isConnected = await checkInternet()
+                if (isConnected) {
+                    const bucket = new Storage().bucket('filter-facility-accounts')
+                    await bucket.upload(csvFilename, {contentType: 'application/csv'})
+                        .then(() => fs.unlinkSync(csvFilename))
+                }
                 fs.unlinkSync(xbrlFilename)
                 resolve(csvFilename)
             } catch (e) {
@@ -35,3 +38,15 @@ export const processHtmlFile = async (xbrlFilename) => {
     })
 }
 
+const checkInternet = () => {
+    return new Promise(resolve => {
+        require('dns').lookup('google.com', function (err) {
+            if (err && err.code == "ENOTFOUND") {
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        })
+    })
+
+};
