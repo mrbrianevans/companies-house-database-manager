@@ -63,30 +63,32 @@ const uploadCsvToDb = async (event, context) => {
             })
             .on('error', (e) => reject(e.message))
     }).catch(e => console.error('Error occured during reading CSV:', e))
-        // const multipleQuery = `
-        // INSERT INTO accounts (company_number, name, label, context_ref, value, start_date, end_date, unit, decimals)
-        // VALUES ($1, $2, $3...);
-        // `
-        // pool.query(multipleQuery, facts, (e)=>resolve(e))
-    let factsInserted = 0, longFactsInserted = 0, insertFactsStartTime = Date.now();
-        for (const fact of facts) {
-            const accountsInsertSql = `
-            INSERT INTO accounts (${Object.keys(fact).toString()})
-            VALUES (${Array(Object.keys(fact).length).fill('$').map((e, i) => ('$' + (i + 1)))})
-            ON CONFLICT ON CONSTRAINT accounts_pkey DO
-            ${isNaN(fact.value) ? 'NOTHING' :
-                'UPDATE SET value = CASE WHEN ABS(excluded.value::numeric) > ABS(accounts.value::numeric) THEN excluded.value ELSE accounts.value END'};`
-            //this update should put the biggest absolute value in the accounts table
-            await pool.query(accountsInsertSql, Object.values(fact))
-                .then(() => factsInserted++)
-                .catch(e => {
-                    console.error("Error",
-                        e.message, "occurred when inserting", fact.value)
-                })
-        }
-    // const {rowCount: companyInCompanies} = await pool.query("SELECT * FROM companies WHERE number=$1", [companyNumber]);
-    //     if(!companyInCompanies)
+    let dc = 1; //dollarCounter
+    const multipleQuery = `
+    INSERT INTO accounts 
+    (company_number, name, label, context_ref, value, start_date, end_date, unit, decimals)
+    VALUES 
+    ${
+        facts.map(fact =>
+            ('(' +
+                `$${dc++}, $${dc++}, ${fact.label ? `$${dc++}` : null},  $${dc++},  $${dc++},` +
+                `${fact.start_date ? `$${dc++}` : null}, ${fact.end_date ? `$${dc++}` : null},` +
+                `${fact.unit ? `$${dc++}` : null}, ${fact.decimals ? `$${dc++}` : null}`
+                + ')')).join(',\n')
+    };
+    
+    `
+    const multipleValues = facts
+        .flatMap(fact => [fact.company_number, fact.name, fact.label, fact.context_ref,
+            fact.value, fact.start_date, fact.end_date, fact.unit, fact.decimals])
+        .filter(value => value !== undefined)
+    let multiInsertError = undefined
     await pool.query('INSERT INTO companies (number) VALUES ($1) ON CONFLICT DO NOTHING;', [companyNumber])
+    await pool.query(multipleQuery, multipleValues)
+        .catch(e => multiInsertError = e.message)
+    let factsInserted = multiInsertError ? 0 : facts.length, longFactsInserted = 0,
+        insertFactsStartTime = Date.now();
+
     for (const fact of longFacts) {
         const accountsInsertSql = `
             INSERT INTO very_long_accounts (${Object.keys(fact).toString()})
@@ -103,9 +105,9 @@ const uploadCsvToDb = async (event, context) => {
     console.log(companyNumber, ':', factsInserted, 'facts inserted;',
         longFactsInserted, 'long facts inserted; in', Date.now() - insertFactsStartTime, 'ms')
     await pool.query(`INSERT INTO accounts_scanned (company_number, accounts_date, csv_scanned,
-                                                    number_of_facts, number_of_long_facts)
-                      VALUES ($1, $2, current_timestamp, $3, $4);`,
-        [companyNumber, balanceSheetDate || new Date().toLocaleDateString(), factsInserted, longFactsInserted])
+                                                    number_of_facts, number_of_long_facts, errors)
+                      VALUES ($1, $2, current_timestamp, $3, $4, $5);`,
+        [companyNumber, balanceSheetDate || new Date().toLocaleDateString(), factsInserted, longFactsInserted, multiInsertError])
     await pool.end()
 };
 

@@ -1,6 +1,8 @@
 import {createServer} from "http";
 import {FinishedFileMetadata} from "./processFolder";
 
+const osu = require('node-os-utils')
+const cpu = osu.cpu
 const fs = require('fs');
 const os = require('os')
 
@@ -18,7 +20,7 @@ const errors = []
 const workers = new Set()
 const startTime = new Date()
 let index = 101680;
-createServer((req, res) => {
+createServer(async (req, res) => {
     if (req.url.endsWith('next')) {
         //return next filename
         res.end(folder + '/' + files[index++])
@@ -50,6 +52,7 @@ createServer((req, res) => {
         const minutesLeft = Math.floor(totalMinutesLeft - (hoursLeft * 60))
         const [, nextUpNumber] = files[index + 1].match(/Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/)
         const averageRecentProcessingTime = finishedFiles.slice(0, 5).reduce((previousValue, currentValue, index) => (previousValue * index + currentValue.time) / (index + 1), 0)
+        const cpuUsage = await cpu.usage()
         res.end(`
 <head>
   <meta http-equiv="refresh" content="5">
@@ -87,13 +90,14 @@ createServer((req, res) => {
     <div class="alert alert-success"><h3>${lastMinuteCount} in the last minute</h3></div>
     
     <p>Averaged ${Math.round(finishedFiles.length / (Date.now() - startTime.valueOf()) * 1000 * 60)} per minute</p>
-    <div class="card text-dark bg-light mb-3" style="max-width: 30rem">
+    <div class="card text-dark bg-light mb-3">
     <div class="card-header"><h2>CPU</h2></div>
         <div class="card-body">
             <pre>
                 ${os.cpus().length} logical processors
                 ${os.cpus()[0].model}
             </pre>
+            <p>Usage: ${cpuUsage}%</p>
         </div>
     
 </div>

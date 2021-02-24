@@ -8,14 +8,14 @@ export const processHtmlFile = async (xbrlFilename) => {
         const [, dateFolder, companyNumber, year, month, day] = xbrlFilename.match(/.([0-9]{4}-[0-9]{2}-[0-9]{2}).Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/)
         const csvFolder = path.resolve(xbrlFilename, '..', '..', '..', 'facts', dateFolder)
         const csvFilename = path.resolve(csvFolder, companyNumber + '_' + year + '-' + month + '-' + day + '.csv')
-        if (fs.existsSync(csvFilename)) resolve('skipped')
-        if (!fs.existsSync(csvFolder)) fs.mkdirSync(csvFolder)
+        // if (fs.existsSync(csvFilename)) resolve('skipped')
+        // if (!fs.existsSync(csvFolder)) fs.mkdirSync(csvFolder)
         const os = process.platform
         const arellePathname = path.resolve((os === 'win32' ? '/"Program Files"' : '/root'), 'Arelle', 'arelleCmdLine.' + (os === 'win32' ? 'exe' : 'py'))
         const columns = 'Label,Name,contextRef,Value,EntityIdentifier,Period,unitRef,Dec'
         const arelleCommand = (os === 'win32' ? '' : 'python3 ') + arellePathname + ' -f "' + xbrlFilename + '" --facts "' + csvFilename + '" --factListCols ' + columns
 
-        require('child_process').execSync(arelleCommand, {timeout: 20000/*miliseconds*/})
+        if (!fs.existsSync(csvFilename)) require('child_process').execSync(arelleCommand, {timeout: 20000/*miliseconds*/})
 
         if (fs.existsSync(csvFilename)) {
             //upload the csv to Storage bucket, and delete it locally (xbrl and csv)
