@@ -3,13 +3,13 @@ const path = require('path');
 const fs = require('fs');
 import {Storage} from '@google-cloud/storage'
 
-export const processHtmlFile = async (xbrlFilename) => {
+export const processHtmlFile: (xbrlFilename) => Promise<string> = async (xbrlFilename) => {
     return new Promise(async (resolve, reject) => {
         const [, dateFolder, companyNumber, year, month, day] = xbrlFilename.match(/.([0-9]{4}-[0-9]{2}-[0-9]{2}).Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/)
         const csvFolder = path.resolve(xbrlFilename, '..', '..', '..', 'facts', dateFolder)
-        const csvFilename = path.resolve(csvFolder, companyNumber + '_' + year + '-' + month + '-' + day + '.csv')
+        const csvFilename: string = path.resolve(csvFolder, companyNumber + '_' + year + '-' + month + '-' + day + '.csv')
         // if (fs.existsSync(csvFilename)) resolve('skipped')
-        // if (!fs.existsSync(csvFolder)) fs.mkdirSync(csvFolder)
+        if (!fs.existsSync(csvFolder)) fs.mkdirSync(csvFolder)
         const os = process.platform
         const arellePathname = path.resolve((os === 'win32' ? '/"Program Files"' : '/root'), 'Arelle', 'arelleCmdLine.' + (os === 'win32' ? 'exe' : 'py'))
         const columns = 'Label,Name,contextRef,Value,EntityIdentifier,Period,unitRef,Dec'
@@ -29,7 +29,7 @@ export const processHtmlFile = async (xbrlFilename) => {
                 fs.unlinkSync(xbrlFilename)
                 resolve(csvFilename)
             } catch (e) {
-                reject(e.message)
+                reject(e)
             }
 
         } else {
@@ -39,14 +39,19 @@ export const processHtmlFile = async (xbrlFilename) => {
 }
 
 const checkInternet = () => {
-    return new Promise(resolve => {
-        require('dns').lookup('google.com', function (err) {
-            if (err && err.code == "ENOTFOUND") {
-                resolve(false);
-            } else {
-                resolve(true);
-            }
+    try {
+        return new Promise(resolve => {
+            require('dns').lookup('google.com', function (err) {
+                if (err && err.code == "ENOTFOUND") {
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            })
         })
-    })
+    } catch (e) {
+        // do nothing with error
+    }
+
 
 };

@@ -1,5 +1,5 @@
 import {createServer} from "http";
-import {FinishedFileMetadata} from "./processFolder";
+import {FinishedFileMetadata} from "./worker";
 
 const osu = require('node-os-utils')
 const cpu = osu.cpu
@@ -19,17 +19,18 @@ const finishedFiles: FinishedFileMetadata[] = []
 const errors = []
 const workers = new Set()
 const startTime = new Date()
-let index = 101680;
+let index = 0;
 createServer(async (req, res) => {
     if (req.url.endsWith('next')) {
-        //return next filename
-        res.end(folder + '/' + files[index++])
+        //return next filename or finished
+        res.end(folder + '/' + files[index++] || 'finished')
     } else if (req.url.endsWith('error')) {
         //push a new error
         let error = ""
         req.on('data', d => error += d)
         req.on('end', () => {
-            errors.push(JSON.parse(error))
+            console.log(error)
+            errors.unshift(JSON.parse(error))
             res.end()
         })
     } else if (req.url.endsWith('finished')) {
@@ -47,15 +48,15 @@ createServer(async (req, res) => {
         let lastMinuteCount = finishedFiles.findIndex((file: FinishedFileMetadata) => file.timestamp < Date.now() - 60000)
         lastMinuteCount = lastMinuteCount === -1 ? finishedFiles.length : lastMinuteCount
         // uses average speed based on previous 10 minutes (innacurate for the first 10 minutes)
-        const totalMinutesLeft = (files.length - index) / finishedFiles.findIndex((file: FinishedFileMetadata) => file.timestamp < Date.now() - 600000) / 10
+        const totalMinutesLeft = (files.length - index) / finishedFiles.findIndex((file: FinishedFileMetadata) => file.timestamp < Date.now() - 600000) * 10
         const hoursLeft = Math.floor(totalMinutesLeft / 60)
         const minutesLeft = Math.floor(totalMinutesLeft - (hoursLeft * 60))
-        const [, nextUpNumber] = files[index + 1].match(/Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/)
+        const [, nextUpNumber] = files[index + 1]?.match(/Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/) || 'finished'
         const averageRecentProcessingTime = finishedFiles.slice(0, 5).reduce((previousValue, currentValue, index) => (previousValue * index + currentValue.time) / (index + 1), 0)
         const cpuUsage = await cpu.usage()
         res.end(`
 <head>
-  <meta http-equiv="refresh" content="5">
+  <meta http-equiv="refresh" content="10">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
   <title>Accounts processing</title>
 </head>
@@ -63,11 +64,12 @@ createServer(async (req, res) => {
     <h1>Accounts processing:  <small class="text-muted">${date}</small></h1>
     <p>Started at ${startTime.toLocaleString()}, done ${finishedFiles.length} in ${Math.round((Date.now() - startTime.valueOf()) / 100 / 60 / 60) / 10} hours</p>
     <p>Currently  ${new Date().toLocaleString()}</p>
-    <h3>${index} out of ${files.length}</h3>
+    <h3>${index} out of ${files.length} (${Math.round(index / files.length * 1000) / 10}%)</h3>
+    
     <div class="progress">
       <div class="progress-bar" role="progressbar" style="width: ${Math.round(index / files.length * 100)}%"></div>
     </div>
-    <p>Approx. ${hoursLeft} hours and ${minutesLeft} minutes to go</p>
+    <p>${Date.now() - startTime.valueOf() > 60 * 10 * 1000 ? `Approx. ${hoursLeft} hours and ${minutesLeft} minutes to go` : 'Not enough data to give prediction for how long left'}</p>
     <h2>Errors:</h2>
     <p>${errors.length} total</p>
     <ul>
@@ -106,8 +108,9 @@ createServer(async (req, res) => {
     <div class="col-5">
         <ul class="list-group">
     ${Array.from(workers.values())
+            .filter(pid => (finishedFiles.find(file => file.core === pid).timestamp > Date.now() - averageRecentProcessingTime * 3))
             .map((pid, index) => (`
-<li class="list-group-item${(finishedFiles.find(file => file.core === pid).timestamp > Date.now() - averageRecentProcessingTime * 1.5) ? ' active' : ''}">
+<li class="list-group-item${(finishedFiles.find(file => file.core === pid).timestamp > Date.now() - averageRecentProcessingTime) ? ' active' : ''}">
     ${index + 1} - pid ${pid}
 </li>`)).join('')}
     </ul>
