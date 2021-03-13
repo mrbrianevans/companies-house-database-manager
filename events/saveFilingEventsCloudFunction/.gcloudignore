@@ -15,5 +15,3 @@
 tsconfig.json
 *.ts
 node_modules
-test.csv
-testbench.*

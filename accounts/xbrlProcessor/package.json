@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node headquarters C:\\Users\\bme\\PycharmProjects\\companies-house-database-manager\\samples\\financials\\unzipped\\2020-07-31 3000",
-    "worker": "node worker 3000"
+    "watch": "tsc -w",
+    "start": "node headquarters C:\\Users\\bme\\PycharmProjects\\companies-house-database-manager\\samples\\financials\\unzipped\\2020-03-31 4000",
+    "worker": "node worker 4000"
   }
 }

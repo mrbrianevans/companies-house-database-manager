@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "module": "commonjs",
+    "target": "ES2019",
+    "moduleResolution": "node",
+    "allowJs": true
+  },
+  "include": [
+    "*.ts"
+  ],
+  "compileOnSave": true
+}

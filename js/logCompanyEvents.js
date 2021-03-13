@@ -2,21 +2,25 @@ const request = require("request")
 const {Pool} = require("pg")
 const fs = require('fs')
 const path = require('path')
-let qtyOfNotifications = 0
-let averageProcessingTime = 0
-let startTime = Date.now()
+
+const RESET_TIMEOUT_MINUTES = 5
+
 const StreamCompanies = async () => {
+  let qtyOfNotifications = 0
+  let averageProcessingTime = 0
+  let startTime = Date.now()
   {
     let pool = new Pool(
       {
-    host: process.env.PG_HOST,
-    user: process.env.PG_USER,
-    password: process.env.PG_PASSWORD,
-    database: process.env.PG_DATABASE,
-    port: Number(process.env.PG_PORT)
-  }
+        host: process.env.PG_HOST,
+        user: process.env.PG_USER,
+        password: process.env.PG_PASSWORD,
+        database: process.env.PG_DATABASE,
+        port: Number(process.env.PG_PORT)
+      }
     )
     let dataBuffer = ''
+    let exit = false;
     let {rows: latestTimepointRow} = await pool.query('SELECT timepoint FROM company_events ORDER BY timepoint DESC LIMIT 1;')
     const reqStream = request.get('https://stream.companieshouse.gov.uk/companies?timepoint=' + latestTimepointRow[0].timepoint)
       .auth(process.env.APIUSER, '')
@@ -25,9 +29,10 @@ const StreamCompanies = async () => {
         switch (r.statusCode) {
           case 200:
             console.time("Listening on company stream")
-            setTimeout(()=>{
-              process.exit() //will exit after 24 hours to be restarted
-            }, 1000*60*60*24)
+            setTimeout(() => {
+              exit = true;
+              console.log(RESET_TIMEOUT_MINUTES + " minutes has passed. Exit=true, stop on next run")
+            }, 1000 * 60 * RESET_TIMEOUT_MINUTES)
             setInterval(() => {
               console.timeLog("Listening on company stream", `Reset comp stats after ${qtyOfNotifications} notifications`)
               // reset stats every hour
@@ -81,17 +86,17 @@ const StreamCompanies = async () => {
                 date: new Date(jsonObject.data.date_of_creation)
                 // sicCodes: jsonObject.data.sic_codes,
               }
-              
+  
               const {
                 rows: companyFromDatabase,
                 rowCount: companiesFoundInDatabase
               } = await pool.query('SELECT * FROM companies WHERE number=$1', [jsonObject.data.company_number])
               //attempt to insert all companies, and if it already exists then update its details.
-               await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) " +
-                 "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) " +
-                 "ON CONFLICT (number) DO UPDATE SET name=$1, streetaddress=$3, county=$4, country=$5, postcode=$6, category=$7, status=$9;",
-                 Object.values(companyFromStream))
-                   .catch(e => console.error("Could not insert company into database", e.toString()))
+              await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) " +
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) " +
+                "ON CONFLICT (number) DO UPDATE SET name=$1, streetaddress=$3, county=$4, country=$5, postcode=$6, category=$7, status=$9;",
+                Object.values(companyFromStream))
+                .catch(e => console.error("Could not insert company into database", e.toString()))
               if (companiesFoundInDatabase) {
                 // compare details to see what changed
                 const differences = {}
@@ -133,7 +138,7 @@ const StreamCompanies = async () => {
                   .catch(e => console.error("Could not insert event into database", e.toString()))
                 // insert this company
                 // await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", Object.values(companyFromStream))
-                  // .catch(e => console.error("Could not insert company into database", e.toString()))
+                // .catch(e => console.error("Could not insert company into database", e.toString()))
               }
             } catch (e) {
               if (e instanceof SyntaxError)
@@ -141,11 +146,17 @@ const StreamCompanies = async () => {
               else
                 console.error(e)
             }
-            
+  
             let totalTimeSoFar = qtyOfNotifications++ * averageProcessingTime + (Date.now() - singleStartTime)
             averageProcessingTime = totalTimeSoFar / qtyOfNotifications
           }
-          reqStream.resume()
+          if (exit) {
+            reqStream.end()
+            console.log("Number of notifications before reset:", qtyOfNotifications)
+            console.log("Average processing time: ", averageProcessingTime)
+            console.timeEnd("Listening on company stream")
+          } else
+            reqStream.resume()
         }
       })
       .on('end', () => {
@@ -156,6 +167,7 @@ const StreamCompanies = async () => {
 }
 
 StreamCompanies()
+setInterval(StreamCompanies, 1000 * 60 * RESET_TIMEOUT_MINUTES + 5000)
 
 const companyTypeConversion = {
   'private-unlimited': "Private unlimited company",

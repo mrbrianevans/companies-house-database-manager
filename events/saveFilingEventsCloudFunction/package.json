@@ -1,0 +1,18 @@
+{
+  "name": "csv-accounts-to-db",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "tsc && gcloud functions deploy saveFilingEvents --region=europe-west1 --trigger-topic=save-filing-events --entry-point=saveEventsToDb --runtime=nodejs12 --timeout=540 --set-env-vars=PGUSER=company_events_saver,PGPASSWORD=36n6gLG4DahjcSFb,PGHOST=\"/cloudsql/companies-house-data:europe-west1:filter-facility-db\",PGPORT=5432,PGDATABASE=postgres,APIUSER=q5YBtCQHw5a-T-I3HBkJsOfRG4szpz2y1VHa2gQ2 --max-instances=1 --memory=128MB",
+    "test": "tsc && node tester"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.28",
+    "@types/pg": "^7.14.10",
+    "typescript": "^4.1.5"
+  },
+  "dependencies": {
+    "pg": "^8.5.1",
+    "request": "^2.88.2"
+  }
+}
