@@ -24,6 +24,7 @@
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
+    "@types/express": "^4.17.11",
     "axios": "^0.21.1",
     "jsonpipe": "^2.2.0",
     "request": "^2.88.2"

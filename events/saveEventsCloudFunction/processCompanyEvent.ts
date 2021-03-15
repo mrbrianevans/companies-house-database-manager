@@ -25,7 +25,10 @@ export const processCompanyEvent = async (jsonEvent: CompanyProfileEvent.Company
         "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) " +
         "ON CONFLICT (number) DO UPDATE SET name=$1, streetaddress=$3, county=$4, country=$5, postcode=$6, category=$7, status=$9;",
         Object.values(companyFromStream))
-        .catch(e => console.error("Could not insert company into database", e.toString()))
+        .catch(e => console.error(JSON.stringify({
+            message: "Could not insert company into database",
+            severity: 'ERROR', code: e.code, errorMessage: e.message
+        })))
     if (companiesFoundInDatabase) {
         // compare details to see what changed
         const differences = {}
@@ -51,7 +54,10 @@ export const processCompanyEvent = async (jsonEvent: CompanyProfileEvent.Company
         }
         await pool.query("INSERT INTO company_events (id, company_number, fields_changed, published, new, timepoint) VALUES ($1, $2, $3, $4, $5, $6)",
             [jsonEvent.resource_id, companyFromStream.number, differences, jsonEvent.event.published_at, false, jsonEvent.event.timepoint])
-            .catch(e => console.error("Could not insert event into database", e.toString()))
+            .catch(e => console.error(JSON.stringify({
+                message: "Could not insert company event into database",
+                severity: 'ERROR', code: e.code, errorMessage: e.message
+            })))
         // if (Object.keys(differences).length > 0) {
         //   if (differences['streetaddress'] && differences['postcode'])
         //     await pool.query("UPDATE companies SET streetaddress=$1, county=$2, country=$3, postcode=$4 WHERE number=$5",
@@ -64,7 +70,10 @@ export const processCompanyEvent = async (jsonEvent: CompanyProfileEvent.Company
         // console.log("Potential new company? ", companyFromStream.number, companyFromStream.date)
         await pool.query("INSERT INTO company_events (id, company_number, fields_changed, published, new, timepoint) VALUES ($1, $2, $3, $4, $5, $6)",
             [jsonEvent.resource_id, companyFromStream.number, null, jsonEvent.event.published_at, true, jsonEvent.event.timepoint])
-            .catch(e => console.error("Could not insert event into database", e.toString()))
+            .catch(e => console.error(JSON.stringify({
+                message: "Could not insert company event into database",
+                severity: 'ERROR', code: e.code, errorMessage: e.message
+            })))
         // insert this company
         // await pool.query("INSERT INTO companies (name, number, streetaddress, county, country, postcode, category, origin, status, date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", Object.values(companyFromStream))
         // .catch(e => console.error("Could not insert company into database", e.toString()))

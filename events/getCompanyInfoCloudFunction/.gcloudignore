@@ -1,0 +1,4 @@
+.gcloudignore
+tsconfig.json
+*.ts
+node_modules
