@@ -1,9 +1,9 @@
 {
-  "name": "get-event-frequency-cloud-function",
-  "version": "0.0.1",
+  "name": "get-company-info-cloud-function",
+  "version": "0.1.0",
   "scripts": {
     "build": "tsc",
-    "deploy": "tsc && gcloud functions deploy eventsFrequency --region=europe-west1 --source=. && npm version patch"
+    "deploy": "tsc && gcloud functions deploy getCompanyInfo --region=europe-west1 --update-env-vars=APIUSER=9d2ff78d-0646-489a-a2aa-0e38e22bb4b0 && npm version minor"
   },
   "devDependencies": {
     "@types/node": "^14.14.28",
@@ -11,6 +11,7 @@
     "typescript": "^4.1.5"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "pg": "^8.5.1"
   }
 }

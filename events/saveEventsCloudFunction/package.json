@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "build": "tsc",
-    "deploy": "tsc && gcloud functions deploy saveCompanyEvents --region=europe-west1",
+    "deploy": "tsc && gcloud functions deploy saveCompanyEvents --region=europe-west1 && npm version patch",
     "test": "tsc && node tester"
   },
   "devDependencies": {

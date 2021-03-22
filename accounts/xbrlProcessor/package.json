@@ -14,7 +14,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "node headquarters C:\\Users\\bme\\PycharmProjects\\companies-house-database-manager\\samples\\financials\\unzipped\\2020-03-31 4000",
-    "worker": "node worker 4000"
+    "start": "node headquarters C:\\Users\\bme\\PycharmProjects\\companies-house-database-manager\\samples\\financials\\unzipped\\2021-01-31 4000",
+    "worker": "node worker 4000",
+    "upload": "node uploadCsvOnly C:\\Users\\bme\\PycharmProjects\\companies-house-database-manager\\samples\\financials\\facts\\2020-12-31"
   }
 }

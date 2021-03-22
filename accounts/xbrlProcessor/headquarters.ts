@@ -23,7 +23,10 @@ let index = 0;
 createServer(async (req, res) => {
     if (req.url.endsWith('next')) {
         //return next filename or finished
-        res.end(folder + '/' + files[index++] || 'finished')
+        if (index < files.length)
+            res.end(folder + '/' + files[index++])
+        else
+            res.end('finished')
     } else if (req.url.endsWith('error')) {
         //push a new error
         let error = ""

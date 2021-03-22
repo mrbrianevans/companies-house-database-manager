@@ -13,7 +13,7 @@ const runCore = async () => {
             await new Promise<void>((resolve => setTimeout(resolve, 3000)))
             return; // wait three seconds and go back to the start of while loop
         }
-        const filename = nextFileRequest.data
+        const filename: string = nextFileRequest.data
         if (filename === 'finished') break;
         await processHtmlFile(filename)
             .then(r => {

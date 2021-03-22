@@ -7,7 +7,8 @@ export const processHtmlFile: (xbrlFilename) => Promise<string> = async (xbrlFil
     return new Promise(async (resolve, reject) => {
         const [, dateFolder, companyNumber, year, month, day] = xbrlFilename.match(/.([0-9]{4}-[0-9]{2}-[0-9]{2}).Prod[0-9]{3}_[0-9]{4}_([A-Z0-9]{8})_([0-9]{4})([0-9]{2})([0-9]{2}).(xml|html)$/)
         const csvFolder = path.resolve(xbrlFilename, '..', '..', '..', 'facts', dateFolder)
-        const csvFilename: string = path.resolve(csvFolder, companyNumber + '_' + year + '-' + month + '-' + day + '.csv')
+        const csvBasename = companyNumber + '_' + year + '-' + month + '-' + day + '.csv'
+        const csvFilename: string = path.resolve(csvFolder, csvBasename)
         // if (fs.existsSync(csvFilename)) resolve('skipped')
         if (!fs.existsSync(csvFolder)) fs.mkdirSync(csvFolder)
         const os = process.platform
@@ -15,6 +16,17 @@ export const processHtmlFile: (xbrlFilename) => Promise<string> = async (xbrlFil
         const columns = 'Label,Name,contextRef,Value,EntityIdentifier,Period,unitRef,Dec'
         const arelleCommand = (os === 'win32' ? '' : 'python3 ') + arellePathname + ' -f "' + xbrlFilename + '" --facts "' + csvFilename + '" --factListCols ' + columns
 
+        const bucket = new Storage().bucket('filter-facility-accounts')
+        const [alreadyUploaded] = await bucket.file(csvBasename).exists()
+        if (alreadyUploaded) {
+            // stops repeat work
+            if (fs.existsSync(csvFilename)) fs.unlinkSync(csvFilename)
+            // fs.unlinkSync(xbrlFilename)
+            console.log("ALREADY UPLOADED??")
+            resolve(csvFilename)
+            return
+        }
+        if (fs.existsSync(csvFilename)) console.log("CSV already exists")
         if (!fs.existsSync(csvFilename)) require('child_process').execSync(arelleCommand, {timeout: 20000/*miliseconds*/})
 
         if (fs.existsSync(csvFilename)) {
@@ -22,7 +34,6 @@ export const processHtmlFile: (xbrlFilename) => Promise<string> = async (xbrlFil
             try {
                 const isConnected = await checkInternet()
                 if (isConnected) {
-                    const bucket = new Storage().bucket('filter-facility-accounts')
                     await bucket.upload(csvFilename, {contentType: 'application/csv'})
                         .then(() => fs.unlinkSync(csvFilename))
                 }
@@ -41,13 +52,14 @@ export const processHtmlFile: (xbrlFilename) => Promise<string> = async (xbrlFil
 const checkInternet = () => {
     try {
         return new Promise(resolve => {
-            require('dns').lookup('google.com', function (err) {
-                if (err && err.code == "ENOTFOUND") {
-                    resolve(false);
-                } else {
-                    resolve(true);
-                }
-            })
+            resolve(true)
+            // require('dns').lookup('google.com', function (err) {
+            //     if (err && err.code == "ENOTFOUND") {
+            //         resolve(false);
+            //     } else {
+            //         resolve(true);
+            //     }
+            // })
         })
     } catch (e) {
         // do nothing with error
