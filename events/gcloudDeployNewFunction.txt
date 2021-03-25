@@ -4,3 +4,6 @@ NEED TO SET: name, entrypoint, trigger
 tsc && gcloud functions deploy TODO --region=europe-west1 --trigger-topic=TODO --entry-point=TODO --runtime=nodejs12 --timeout=540 --set-env-vars=PGUSER=company_events_saver,PGPASSWORD=36n6gLG4DahjcSFb,PGHOST="/cloudsql/companies-house-data:europe-west1:filter-facility-db",PGPORT=5432,PGDATABASE=postgres,APIUSER=q5YBtCQHw5a-T-I3HBkJsOfRG4szpz2y1VHa2gQ2 --max-instances=1 --memory=128MB
 
 gcloud functions deploy getCompanyInfo --region=europe-west1 --trigger-http --entry-point=getCompanyInfo --runtime=nodejs12 --timeout=60 --set-env-vars=PGUSER=events_freq_cloud_func,PGPASSWORD=QVrgRHFSpXXT7ts,PGHOST="/cloudsql/companies-house-data:europe-west1:filter-facility-db",PGPORT=5432,PGDATABASE=postgres --max-instances=1 --memory=128MB
+
+gcloud functions deploy getCompanyInfoGo --region=europe-west1 --trigger-http --entry-point=GetCompanyInfo --runtime=go113 --allow-unauthenticated --timeout=60 --set-env-vars=PGUSER=events_freq_cloud_func,PGPASSWORD=QVrgRHFSpXXT7ts,PGHOST="/cloudsql/companies-house-data:europe-west1:filter-facility-db",PGPORT=5432,PGDATABASE=postgres --max-instances=1 --memory=128MB
+

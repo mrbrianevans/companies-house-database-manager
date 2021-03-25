@@ -1,6 +1,6 @@
 {
-  "name": "csv-accounts-to-db",
-  "version": "0.0.1",
+  "name": "save-company-events-cloud-function",
+  "version": "0.0.2",
   "scripts": {
     "build": "tsc",
     "deploy": "tsc && gcloud functions deploy saveCompanyEvents --region=europe-west1 && npm version patch",

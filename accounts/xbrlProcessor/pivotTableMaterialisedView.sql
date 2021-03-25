@@ -247,18 +247,45 @@ CREATE UNIQUE INDEX ON short_list_accounts (company_number, end_date);
 -- and make company numbers unique so there is only one entry in the final data dump for each company
 -- (with its most recent accounts)
 
+WITH south_west_accountants AS (
+    SELECT accountants                          AS name
+         , string_agg(accouting_software, ', ') AS software
+    FROM wide_accounts_south_west
+    WHERE accountants IS NOT NULL
+    GROUP BY accountants
+)
+SELECT name,
+       (
+           SELECT COUNT(distinct company_number)
+           FROM accounts a
+           WHERE a.value = swa.name
+             AND a.label = 'Name of entity accountants'
+       ) AS number_of_clients,
+       (
+           SELECT
+       )
+
+FROM south_west_accountants swa
+WHERE (
+          SELECT COUNT(*)
+          FROM wide_accounts_south_west swa
+          WHERE swa.accountants = name
+      ) > 5
+;
+
+
 -- long version (1 million at a time, reduce offset each time)
-CREATE MATERIALIZED VIEW wide_accounts_second_anda_half AS
+CREATE MATERIALIZED VIEW wide_accounts_south_west AS
 SELECT r.company_number,
 --        r.end_date::date as end_date,
-       (
-           SELECT value::date
-           FROM accounts b
-           WHERE b.company_number = r.company_number
-             AND b.end_date = r.end_date
-             AND label = 'Balance sheet date'
-           LIMIT 1
-       ) AS balance_sheet_date,
+--        (
+--            SELECT value::date
+--            FROM accounts b
+--            WHERE b.company_number = r.company_number
+--              AND b.end_date = r.end_date
+--              AND label = 'Balance sheet date'
+--            LIMIT 1
+--        ) AS balance_sheet_date,
 --        (
 --            SELECT value::date
 --            FROM accounts b
@@ -419,9 +446,16 @@ SELECT r.company_number,
 --              AND b.end_date = r.end_date
 --              AND label = 'Name of entity officer'
 --        )                AS officers
-FROM short_list_accounts r
+FROM short_list_accounts r,
+     companies c,
+     detailed_postcodes d
+WHERE r.company_number = c.number
+  AND c.postcode = d.postcode
+  AND (d.county = 'Somerset' OR d.county = 'Devon' OR d.county = 'Dorset')
 -- , accounts b WHERE b.company_number=r.company_number AND b.end_date=r.end_date
-LIMIT 1362251 OFFSET 681126
+-- LIMIT 681126
+LIMIT 1362251
+--     OFFSET 1362251
 ; -- 25 minutes to do a million, failed on 4 million, trying 2 million
 
 CREATE INDEX ON accounts (company_number, end_date);

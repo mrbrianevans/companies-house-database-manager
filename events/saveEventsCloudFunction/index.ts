@@ -18,7 +18,7 @@ const saveEventsToDb = () => {
         const startTime = Date.now()
         let dataBuffer = '' // stores incoming data until it makes a complete JSON object
         let {rows: latestTimepointRow} = await pool.query('SELECT timepoint FROM company_events ORDER BY timepoint DESC LIMIT 1;')
-        const reqStream = request.get('https://stream.companieshouse.gov.uk/companies?timepoint=' + latestTimepointRow[0].timepoint)
+        const reqStream = request.get('https://stream.companieshouse.gov.uk/companies?timepoint=' + (Number(latestTimepointRow[0].timepoint) + 1))
             .auth(process.env.APIUSER, '')
             .on('response', (r: any) => {
                 if (r.statusCode !== 200) reject("Received a status code of " + r.statusCode)
@@ -51,8 +51,8 @@ const saveEventsToDb = () => {
                                 severity: 'ERROR'
                             })))
                             // resolve when backlog is less than 5 minutes or execution time approaches 9 minutes
-                            if (new Date(jsonObject.event.published_at).valueOf() > (Date.now() - (1000 * 60 * 60 * 5)) ||
-                                Date.now() - startTime > 500 * 1000)
+                            if (new Date(jsonObject.event.published_at).valueOf() > (Date.now() - (1000 * 60 * 5)) ||
+                                Date.now() - startTime > 500 * 1000) {
                                 resolve(JSON.stringify({
                                     message: "Saved " + numberOfEventsSaved + " events in " + (Math.round(Date.now() - startTime) / 1000) + " seconds." +
                                         " Averaged " + Math.round((Date.now() - startTime) / numberOfEventsSaved) + "ms per event",
@@ -64,6 +64,8 @@ const saveEventsToDb = () => {
                                     startedAtTimepoint: latestTimepointRow[0].timepoint,
                                     finishedAtTimepoint: jsonObject.event.timepoint
                                 }))
+                                return;
+                            }
                         } catch (e) {
                             if (e instanceof SyntaxError)
                                 console.error(JSON.stringify({
