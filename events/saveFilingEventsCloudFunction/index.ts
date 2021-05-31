@@ -17,8 +17,8 @@ const saveEventsToDb = () => {
         let numberOfEventsSaved = 0;
         const startTime = Date.now()
         let dataBuffer = '' // stores incoming data until it makes a complete JSON object
-        let {rows: latestTimepointRow} = await pool.query('SELECT timepoint FROM filing_events ORDER BY timepoint DESC LIMIT 1;')
-        const reqStream = request.get('https://stream.companieshouse.gov.uk/filings?timepoint=' + latestTimepointRow[0].timepoint)
+        let {rows: latestTimepointRow} = await pool.query('SELECT timepoint FROM filing_events WHERE timepoint IS NOT NULL ORDER BY timepoint DESC LIMIT 1;')
+        const reqStream = request.get('https://stream.companieshouse.gov.uk/filings' + (latestTimepointRow[0] ? ('?timepoint='+latestTimepointRow[0].timepoint): ''))
             .auth(process.env.APIUSER, '')
             .on('response', (r: any) => {
                 if (r.statusCode !== 200) reject("Received a status code of " + r.statusCode)

@@ -44,7 +44,7 @@ const uploadCsvToDb = async () => {
     // console.log("Facts after frozen", facts)
     let dc = 1; //dollarCounter
     const multipleQuery = `
-    INSERT INTO accounts 
+    INSERT INTO company_accounts 
     (company_number, name, label, context_ref, value, start_date, end_date, unit, decimals)
     VALUES 
     ${
@@ -61,7 +61,7 @@ const uploadCsvToDb = async () => {
     // console.log(multipleQuery.replace(/\$[0-9]*/g, index => `'${multipleValues[Number(index.slice(1)) - 1]}'`))
     for (const fact of facts) {
         const accountsInsertSql = `
-            INSERT INTO accounts (${Object.keys(fact).toString()})
+            INSERT INTO company_accounts (${Object.keys(fact).toString()})
             VALUES (${Array(Object.keys(fact).length).fill('$').map((e, i) => ('$' + (i + 1)))})
             ON CONFLICT ON CONSTRAINT accounts_pkey DO
             ${isNaN(fact.value) ? 'NOTHING' :

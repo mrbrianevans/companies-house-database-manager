@@ -61,7 +61,7 @@ const processHtmlFile = async (xbrlFilename) => {
           if (data.value && data.company_number && data.name && data.context_ref) { // dont insert null values or (reported) values
             if (!isNaN(data.value.replace(',', '').trim())) data.value = data.value.replace(',', '') // remove commas for type casting in postgres
             //on conflict, it will add the second value to the end of the original value. this is for directors name etc. DO NOT RUN THE SAME FILE THROUGH TWICE, IT WILL RUIN IT
-            const accountsInsertSql = `INSERT INTO accounts (${Object.keys(data).toString()}) VALUES (${Array(Object.keys(data).length).fill('$').map((e, i) => ('$' + (i + 1)))}) ON CONFLICT ON CONSTRAINT accounts_pkey DO NOTHING;` // for updating to a list use: UPDATE SET value=EXCLUDED.value||';'||accounts.value
+            const accountsInsertSql = `INSERT INTO company_accounts (${Object.keys(data).toString()}) VALUES (${Array(Object.keys(data).length).fill('$').map((e, i) => ('$' + (i + 1)))}) ON CONFLICT ON CONSTRAINT accounts_pkey DO NOTHING;` // for updating to a list use: UPDATE SET value=EXCLUDED.value||';'||accounts.value
             // console.log('SQL QUERY: '+ accountsInsertSql)
             await pool.query(accountsInsertSql, Object.values(data))
               .catch(e => {

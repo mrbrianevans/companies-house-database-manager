@@ -8,7 +8,7 @@ const getCompanyInfo = (req: Request, res: Response) => {
         // Send response to OPTIONS requests
         res.set('Access-Control-Allow-Methods', 'GET');
         res.set('Access-Control-Allow-Headers', 'Content-Type');
-        res.set('Access-Control-Max-Age', '3600');
+        res.set('Access-Control-Max-Age', '86400');
         res.status(204).send('');
     } else {
         const pool = new Pool()

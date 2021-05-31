@@ -33,6 +33,7 @@ ORDER BY coalesce(company.minute, filing.minute)
                 groupBy: timeInterval,
                 sqlExecutionTime: Date.now() - sqlStartTime,
                 rowsReturned: rows.length,
+                query: sqlStatement,
                 message: "SELECT number of events GROUP BY " + timeInterval + " in " + (Date.now() - sqlStartTime) + "ms",
                 severity: "INFO"
             }))

@@ -2,7 +2,7 @@
 CREATE MATERIALIZED VIEW wide_accounts_first_million AS
 WITH list_rows AS (
     SELECT a.company_number, a.end_date
-    FROM accounts a
+    FROM company_accounts a
     GROUP BY a.company_number, a.end_date
     ORDER BY a.end_date, a.company_number
     LIMIT 1000000 OFFSET 0
@@ -11,7 +11,7 @@ SELECT r.company_number,
        r.end_date::date as date,
        (WITH comp_accounts AS (
            SELECT *
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
        )
         SELECT ARRAY [
@@ -204,7 +204,7 @@ REFRESH MATERIALIZED VIEW wide_accounts;
 -- run this frequently (takes an hour)
 WITH list_rows AS (
     SELECT a.company_number, a.end_date
-    FROM accounts a
+    FROM company_accounts a
     GROUP BY a.company_number, a.end_date
 )
 SELECT COUNT(*)
@@ -224,13 +224,13 @@ WHERE wide_accounts_million.legal_name IS NOT NULL
 
 
 SELECT *
-FROM accounts
+FROM company_accounts
 WHERE;
 
 
 CREATE MATERIALIZED VIEW short_list_accounts AS
 SELECT a.company_number, a.end_date
-FROM accounts a
+FROM company_accounts a
 WHERE label = 'UK Companies House registered number'
   AND a.value = a.company_number
 GROUP BY a.company_number, a.end_date
@@ -257,7 +257,7 @@ WITH south_west_accountants AS (
 SELECT name,
        (
            SELECT COUNT(distinct company_number)
-           FROM accounts a
+           FROM company_accounts a
            WHERE a.value = swa.name
              AND a.label = 'Name of entity accountants'
        ) AS number_of_clients,
@@ -312,7 +312,7 @@ SELECT r.company_number,
 --        )                AS legal_name,
        (
            SELECT value
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Name of entity accountants'
@@ -320,7 +320,7 @@ SELECT r.company_number,
        ) AS accountants,
        (
            SELECT value
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Name of production software'
@@ -328,7 +328,7 @@ SELECT r.company_number,
        ) AS accouting_software,
        (
            SELECT MAX(TO_NUMBER(value, '999,999,999,999'))
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Average number of employees during the period'
@@ -458,12 +458,12 @@ LIMIT 1362251
 --     OFFSET 1362251
 ; -- 25 minutes to do a million, failed on 4 million, trying 2 million
 
-CREATE INDEX ON accounts (company_number, end_date);
+CREATE INDEX ON company_accounts (company_number, end_date);
 -- long version with JOIN (1 million at a time, increase offset each time)
 CREATE MATERIALIZED VIEW wide_accounts_first_million AS;
 WITH matched_accounts AS (SELECT *
                           FROM list_accounts r
-                                   JOIN accounts b ON b.company_number = r.company_number AND
+                                   JOIN company_accounts b ON b.company_number = r.company_number AND
                                                       b.end_date = r.end_date
                           LIMIT 100 OFFSET 0)
 SELECT matched_accounts.company_number,
@@ -476,7 +476,7 @@ SELECT matched_accounts.company_number,
        )                               AS balance_sheet_date,
        (
            SELECT value::date
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'End date for period covered by report'
@@ -484,7 +484,7 @@ SELECT matched_accounts.company_number,
        )                               AS report_end_date,
        (
            SELECT value::date
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Start date for period covered by report'
@@ -492,7 +492,7 @@ SELECT matched_accounts.company_number,
        )                               AS report_start_date,
        (
            SELECT value
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Entity current legal or registered name'
@@ -500,7 +500,7 @@ SELECT matched_accounts.company_number,
        )                               AS legal_name,
        (
            SELECT value
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Name of entity accountants'
@@ -508,7 +508,7 @@ SELECT matched_accounts.company_number,
        )                               AS accountants,
        (
            SELECT value
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Name of production software'
@@ -519,7 +519,7 @@ SELECT matched_accounts.company_number,
                       WHEN AVG(TO_NUMBER(value, '999,999,999,999')) > 0
                           THEN MAX(TO_NUMBER(value, '999,999,999,999'))
                       ELSE MIN(TO_NUMBER(value, '999,999,999,999')) END
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Average number of employees during the period'
@@ -529,7 +529,7 @@ SELECT matched_accounts.company_number,
                       WHEN AVG(TO_NUMBER(value, '999,999,999,999')) > 0
                           THEN MAX(TO_NUMBER(value, '999,999,999,999'))
                       ELSE MIN(TO_NUMBER(value, '999,999,999,999')) END
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Current assets'
@@ -539,7 +539,7 @@ SELECT matched_accounts.company_number,
                       WHEN AVG(TO_NUMBER(value, '999,999,999,999')) > 0
                           THEN MAX(TO_NUMBER(value, '999,999,999,999'))
                       ELSE MIN(TO_NUMBER(value, '999,999,999,999')) END
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Cash at bank and on hand'
@@ -549,7 +549,7 @@ SELECT matched_accounts.company_number,
                       WHEN AVG(TO_NUMBER(value, '999,999,999,999')) > 0
                           THEN MAX(TO_NUMBER(value, '999,999,999,999'))
                       ELSE MIN(TO_NUMBER(value, '999,999,999,999')) END
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Debtors'
@@ -559,7 +559,7 @@ SELECT matched_accounts.company_number,
                       WHEN AVG(TO_NUMBER(value, '999,999,999,999')) > 0
                           THEN MAX(TO_NUMBER(value, '999,999,999,999'))
                       ELSE MIN(TO_NUMBER(value, '999,999,999,999')) END
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Creditors'
@@ -569,7 +569,7 @@ SELECT matched_accounts.company_number,
                       WHEN AVG(TO_NUMBER(value, '999,999,999,999')) > 0
                           THEN MAX(TO_NUMBER(value, '999,999,999,999'))
                       ELSE MIN(TO_NUMBER(value, '999,999,999,999')) END
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Fixed assets'
@@ -579,7 +579,7 @@ SELECT matched_accounts.company_number,
                       WHEN AVG(TO_NUMBER(value, '999,999,999,999')) > 0
                           THEN MAX(TO_NUMBER(value, '999,999,999,999'))
                       ELSE MIN(TO_NUMBER(value, '999,999,999,999')) END
-           FROM accounts b
+           FROM company_accounts b
            WHERE b.company_number = r.company_number
              AND b.end_date = r.end_date
              AND label = 'Net assets (liabilities)'

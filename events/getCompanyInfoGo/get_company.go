@@ -59,9 +59,9 @@ func GetCompanyInfo(w http.ResponseWriter, r *http.Request) {
         CheckError(err)
 
         rows, err := db.Query(`
-SELECT name, number, streetaddress, 
-       county, country, postcode, 
-       category, origin, status, 
+SELECT name, number, streetaddress,
+       county, country, postcode,
+       category, origin, status,
        date::text, updated::text
        FROM companies WHERE number = $1`, company_number)
         CheckError(err)
@@ -80,19 +80,21 @@ SELECT name, number, streetaddress,
         if rows.Next(){
         err = rows.Scan(&name, &number, &streetaddress, &county, &country, &postcode, &category, &origin, &status, &date, &updated)
         CheckError(err)
-        fmt.Println("Name read from DB: ", name)
-            fmt.Printf(`{"message": "Name read from DB: %s", "severity": "info", "company_number":"%s"}`, name, number)
+//         fmt.Println("Name read from DB: ", name)
+        fmt.Printf(`{"message": "Name read from DB: %s", "severity": "info", "company_number":"%s"}%c`, name, number, '\n')
         c := Company{name, number, streetaddress, county, country, postcode, category, origin, status, date, updated}
         defer rows.Close()
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(c)
+        }else{
+          fmt.Printf(`{"message": "%s", "severity": "warning", "company_number":"%s"}%c`, "Company not found", company_number, '\n')
+          fmt.Fprintf(w, "Company not found")
         }
-        fmt.Printf(`{"message": "%s", "severity": "warning"}`, "Company not found")
-        fmt.Fprintf(w, "Company not found")
+
 }
 func CheckError(err error) {
     if err != nil {
-            fmt.Printf(`{"message": "%s", "severity": "error"}`, err)
+            fmt.Printf(`{"message": "%s", "severity": "error"}%c`, err, '\n')
             panic(err)
     }
 }

@@ -8,7 +8,7 @@ export const processFilingEvent = async (filingEvent: FilingEvent.FilingEvent, p
         rows: descriptions,
         rowCount
     } = await pool.query("SELECT value FROM filing_history_descriptions WHERE key=$1 LIMIT 1", [filingEvent.data.description])
-    // console.timeLog('Process filing history',{"Database response": descriptions})
+    // console.log('Process filing history',{"Database response": descriptions})
     if (rowCount !== 1) return // can't find description in database (rare)
     const description = descriptions[0]['value']
     let formattedDescription = description.replace(/{([a-z_]+)}/g, (s) => filingEvent.data.description_values ? filingEvent.data.description_values[s.slice(1, s.length - 1)] || '' : '')
@@ -25,4 +25,5 @@ export const processFilingEvent = async (filingEvent: FilingEvent.FilingEvent, p
          published, barcode, type, company_number)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         ON CONFLICT DO NOTHING;`, insertParameters)
+
 }

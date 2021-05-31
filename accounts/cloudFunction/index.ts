@@ -5,6 +5,7 @@ import {Pool} from 'pg'
 /**
  * Triggered from a file upload to a Cloud Storage bucket filter-facility-accounts.
  *
+ * reads the CSV file and loads the data in the postgres database
  * @param {!Object} event Event payload.
  * @param {!Object} context Metadata for the event.
  */
@@ -75,7 +76,7 @@ const uploadCsvToDb = async (event, context) => {
     Object.freeze(facts)
     let dc = 1; //dollarCounter
     const multipleQuery = `
-    INSERT INTO accounts 
+    INSERT INTO company_accounts 
     (company_number, name, label, context_ref, value, start_date, end_date, unit, decimals)
     VALUES 
     ${
@@ -101,7 +102,7 @@ const uploadCsvToDb = async (event, context) => {
         insertFactsStartTime = Date.now()
         for (const fact of facts) {
             const accountsInsertSql = `
-            INSERT INTO accounts (${Object.keys(fact).toString()})
+            INSERT INTO company_accounts (${Object.keys(fact).toString()})
             VALUES (${Array(Object.keys(fact).length).fill('$').map((e, i) => ('$' + (i + 1)))})
             ON CONFLICT ON CONSTRAINT accounts_pkey DO
             ${isNaN(Number(fact.value)) ? "NOTHING" :
