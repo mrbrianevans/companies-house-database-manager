@@ -5,6 +5,7 @@
 
 #ifndef __READFILE_H
 #define __READFILE_H
+#include <time.h>
 struct fileRow{
    char companyNumber[9];
    char recordType;
