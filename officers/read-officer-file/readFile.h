@@ -10,7 +10,7 @@ struct fileRow{
    char companyNumber[9];
    char recordType;
    char appDateOrigin;
-   char appointmentType;
+   char appointmentType[3];
    char personNumber[13];
    char corporateIndicator;
    char appointmentDate[9];
@@ -19,9 +19,23 @@ struct fileRow{
    char partialDateOfBirth[7];
    char fullDateOfBirth[9];
    // the length of the section of variable personal data
-   char variableDataLength;
-
+   int variableDataLength;
+   //-----------VARIABLE DATA---------
+   char title[51];
+   char forenames[51];
+   char surname[161];
+   char honours[51];
+   char careOf[101];
+   char poBox[11];
+   char addressLine1[252];
+   char addressLine2[51];
+   char postTown[51];
+   char county[51];
+   char country[51];
+   char occupation[41];
+   char nationality[41];
+   char usualResidentialCountry[161];
 };
 typedef struct fileRow FileRow;
-extern int readFile();
+extern int readFile(char *filename);
 #endif //__READFILE_H
