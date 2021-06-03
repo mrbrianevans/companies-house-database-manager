@@ -1,6 +1,10 @@
 #include "readFile.h"
 
-extern int readFile(char *filename){
+extern int readFile(char *filename, char *outputFilename){
+   // extract this out
+   FILE *outputPersonCsv;
+   fopen_s(&outputPersonCsv, outputFilename, "w");
+
    FILE *filepointer;
    fopen_s(&filepointer, filename, "r");
    if( !filepointer )
@@ -29,6 +33,7 @@ extern int readFile(char *filename){
       printf("Failed to allocate memory to file row\n");
       return 1;
    }
+   writePersonCsvHeaders(outputPersonCsv); // write CSV headers to the output file
    int counter = 0, companyCounter = 0, personCounter = 0, unknownCounter = 0, scanFails = 0;
    int variableDataLength;
    clock_t startTime = clock();
@@ -43,14 +48,13 @@ extern int readFile(char *filename){
       beginningOfLinePos = ftell(filepointer) - 8; // minus eight for the company number taken off
       counter++;
       fileRow->recordType = fgetc(filepointer);
-if(counter>  5) break;
+// if(counter>  20000) break;
       if(fileRow->recordType == '1'){
          // printf("Company record for company number %s", fileRow->companyNumber);
          companyCounter++;
       }else if(fileRow->recordType == '2'){
          personCounter++;
-         //app type is wrong. can't read a 2 digit number into a char, it seems?
-         int scanned = fscanf(filepointer, "%1s%2s%12s", &fileRow->appDateOrigin, fileRow->appointmentType, fileRow->personNumber);
+         int scanned = fscanf(filepointer, "%1s%2hd%12s", &fileRow->appDateOrigin, &fileRow->appointmentType, fileRow->personNumber);
          if(scanned != 3){
             scanFails++;
             fseek(filepointer, beginningOfLinePos, SEEK_SET);
@@ -70,38 +74,41 @@ if(counter>  5) break;
             printf("Unexpected number of scanned arguments from string. Expected %d, actual %d: company number: %s\n", 6, scanned, fileRow->companyNumber);
             printf("appointmentDate:%8s,resignationDate:%8s,personPostCode:%8s,partialDateOfBirth:%8s,fullDateOfBirth:%8s,variableDataLength:%4d\n", fileRow->appointmentDate, fileRow->resignationDate, fileRow->personPostCode, fileRow->partialDateOfBirth, fileRow->fullDateOfBirth, fileRow->variableDataLength);
          }
-         //todo: this doesn't work due to %[ not accepting empty strings. Need to find another way
-         //------ scan for variable data to split by chevron
-         scanned = fscanf(filepointer, "%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]%[^<]",
-                          fileRow->title, fileRow->forenames, fileRow->surname,
-                          fileRow->honours, fileRow->careOf,fileRow->poBox,
-                          fileRow->addressLine1,fileRow->addressLine2, fileRow->postTown,
-                          fileRow->county, fileRow->country, fileRow->occupation,
-                          fileRow->nationality, fileRow->usualResidentialCountry);
-         if(scanned != 14){
+         fileRow->variableData = malloc(sizeof(char) * (fileRow->variableDataLength + 1));
+         // fileRow->variableData = malloc(1000);
+         if(fileRow->variableData == NULL){
             scanFails++;
             fseek(filepointer, beginningOfLinePos, SEEK_SET);
             fgets(row, 1000, filepointer);
             //todo: add this line to an error log file
-            // continue;
-            printf("Unexpected number of scanned arguments from string. Expected %d, actual %d: company number: %s\n", 14, scanned, fileRow->companyNumber);
+            fprintf(stderr, "Failed to allocated memory on line %d: %s", counter, row);
+            continue;
          }
-         if(personCounter < 3){
-            printf("Company number: %s. Record type: %c. App date origin: %c. App type: %s. Person number: %s. ", fileRow->companyNumber, fileRow->recordType, fileRow->appDateOrigin, fileRow->appointmentType, fileRow->personNumber);
-            // printf("Corporate indicator: %c. ", fileRow->corporateIndicator);
-            if(fileRow->corporateIndicator == 'Y'){
-               printf("IT IS A CORPORATION!");
-            }
-            printf("Appointment date: %s. ", fileRow->appointmentDate);
-            printf("Resignation date: %s. ", fileRow->resignationDate);
-            printf("Post code: %s. ", fileRow->personPostCode);
-            printf("Partial birth date: %s. ", fileRow->partialDateOfBirth);
-            printf("Full birth date: %s. ", fileRow->fullDateOfBirth);
-            printf("\nFull name: %s %s %s %s. ", fileRow->title, fileRow->forenames, fileRow->surname, fileRow->honours);
-            printf("\nFull address: %s, %s, %s, %s, %s, %s, %s. \n", fileRow->careOf, fileRow->poBox, fileRow->addressLine1, fileRow->addressLine2, fileRow->postTown, fileRow->county, fileRow->country);
-            printf("Occupation & nationality, usual residential country: %s & %s, %s. ", fileRow->occupation, fileRow->nationality, fileRow->usualResidentialCountry);
-            printf("\n");
-         }
+         fgets(fileRow->variableData, fileRow->variableDataLength, filepointer);
+         // fgets(fileRow->variableData, sizeof fileRow->variableData, filepointer);
+         // trying to ensure that I've actually reached the end of the line
+         // printf("Next character is a |%c|\n", fgetc(filepointer));
+         // char nextCharacter = fgetc(filepointer);
+         // char nextCharacter = fileRow->variableData[strlen(fileRow->variableData)-1];
+         // if(nextCharacter != '<'){
+         //    scanFails++;
+         //    fseek(filepointer, beginningOfLinePos, SEEK_SET);
+         //    fgets(row, 1000, filepointer);
+         //    //todo: add this line to an error log file
+         //    continue;
+         //    fprintf(stderr,"Line ending is not a < but a |%c| on line %d, person %s\n", nextCharacter, counter, fileRow->personNumber);
+         // }else if(strcmp(fileRow->personNumber, "252347640001")==0){
+         //    printf("Antonio passed the check\n");
+         // }
+         // scanned = sscanf(fileRow->variableData, "%*s<%*s<%*s<%*s<%*s<%*s<%*s<%*s<%*s<%*s<%*s<%*s<%*s");
+         // if(scanned==13){
+         //    printf("Scanned %d variables", scanned);
+         // }else{
+         //    printf("Didn't scanned %d variables", scanned);
+         // }
+         writePersonCsvLine(outputPersonCsv,fileRow);
+         // to debug, uncomment this line
+         // writePersonCsvLine(outputPersonCsv,stdout);
       }else{
          unknownCounter++;
          fseek(filepointer, beginningOfLinePos, SEEK_SET);
@@ -111,6 +118,11 @@ if(counter>  5) break;
          continue;
       }
       fgets(row, 1000, filepointer);
+
+   }
+   if(strcmp(fileRow->companyNumber, "99999999") != 0){
+      fprintf(stderr, "No tail record found\n");
+      return 5;
    }
    // ------------- read tail record --------------------------
    beginningOfLinePos = ftell(filepointer) - 8; // minus eight for the company number taken off
@@ -134,8 +146,8 @@ if(counter>  5) break;
    printf("Read %d lines in %.3f sec. Average %.3f sec per 1,000,000 rows\n", counter, secondsTaken, averagePerThousand);
    printf("%d company records, %d person records, %d unknown records, %d scan fails\n", companyCounter, personCounter, unknownCounter, scanFails);
    fclose(filepointer);
-   printf("File %s closed\n", filename);
-   free(filepointer);
+   fclose(outputPersonCsv);
+   printf("File %s, %s closed\n", filename, outputFilename);
    free(fileRow);
    return 0;
 };

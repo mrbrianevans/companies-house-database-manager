@@ -6,36 +6,14 @@
 #ifndef __READFILE_H
 #define __READFILE_H
 #include <time.h>
-struct fileRow{
-   char companyNumber[9];
-   char recordType;
-   char appDateOrigin;
-   char appointmentType[3];
-   char personNumber[13];
-   char corporateIndicator;
-   char appointmentDate[9];
-   char resignationDate[9];
-   char personPostCode[9];
-   char partialDateOfBirth[7];
-   char fullDateOfBirth[9];
-   // the length of the section of variable personal data
-   int variableDataLength;
-   //-----------VARIABLE DATA---------
-   char title[51];
-   char forenames[51];
-   char surname[161];
-   char honours[51];
-   char careOf[101];
-   char poBox[11];
-   char addressLine1[252];
-   char addressLine2[51];
-   char postTown[51];
-   char county[51];
-   char country[51];
-   char occupation[41];
-   char nationality[41];
-   char usualResidentialCountry[161];
-};
-typedef struct fileRow FileRow;
-extern int readFile(char *filename);
+#include <string.h>
+#include "writeCsv.h"
+#include "PersonRow.h"
+
+extern int readFile(char *filename, char *outputFilename);
 #endif //__READFILE_H
+//
+//FC032186<Director  <188774010001<false<20141031<<BT9 6DJ <19940201       <false<  <JACK PATRICK<MCCANN    <<<<14 WELLINGTON PARK,                                           <SUITE 1 <BELFAST<COUNTY ANTRIM  <NORTHERN IRELAND <STUDENT <IRISH<NORTHERN IRELAND
+//FC032208<Secretary <252347640001<false<20181010<<BT1 6JH <               <false<MR<ANTÓNIO MONTEIRO<REMUGE<<<<SUITE 313 SCOTTISH PROVIDENT BUILDING 7 DONEGALL SQUARE WEST  <        <BELFAST<               <                 <        <
+//                                                                                                                                                                                    <<BELFAST<               <                 <        <     <
+//                                                                                                                                                                                    <<BELFAST<               <                 <        <     <           <
