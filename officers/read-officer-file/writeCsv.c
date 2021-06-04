@@ -31,6 +31,9 @@ char * getAppointmentType(int typeCode){
 // formats a date from CCYYMMDD to YYYY-MM-DD (actually just leaving it for now)
 char * formatFullDate(char * unformattedDate){
    if(unformattedDate[0] == ' ') return "";
+   // this corrects data entry faults that have 0006 for 2006
+   if(unformattedDate[0] == '0' && unformattedDate[1] == '0')
+      unformattedDate[0] = '2';
    return unformattedDate;
 }
 
@@ -70,3 +73,5 @@ void writePersonCsvLine(FILE* filepointer, FileRow * fileRow)
            fileRow->variableData
         );
 }
+
+

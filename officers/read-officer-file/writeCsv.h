@@ -12,5 +12,5 @@ char *getAppointmentType(int);
 // write person headers with < deliminator to the file pointer
 void writePersonCsvHeaders(FILE *);
 void writePersonCsvLine(FILE * , FileRow * fileRow);
-void printFileRow(FileRow);
+void writeErrorRow(FILE *, char *);
 #endif //__WRITECSV_H
