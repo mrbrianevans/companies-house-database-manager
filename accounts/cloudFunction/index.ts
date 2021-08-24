@@ -102,11 +102,10 @@ const uploadCsvToDb = async (event, context) => {
         insertFactsStartTime = Date.now()
         for (const fact of facts) {
             const accountsInsertSql = `
-            INSERT INTO company_accounts (${Object.keys(fact).toString()})
-            VALUES (${Array(Object.keys(fact).length).fill('$').map((e, i) => ('$' + (i + 1)))})
-            ON CONFLICT ON CONSTRAINT accounts_pkey DO
-            ${isNaN(Number(fact.value)) ? "NOTHING" :
-                'UPDATE SET value = CASE WHEN ABS(excluded.value::numeric) > ABS(accounts.value::numeric) THEN excluded.value ELSE accounts.value END'};`
+                INSERT INTO company_accounts (${Object.keys(fact).toString()})
+                VALUES (${Array(Object.keys(fact).length).fill('$').map((e, i) => ('$' + (i + 1)))})
+                ON CONFLICT ON CONSTRAINT accounts_pkey DO ${isNaN(Number(fact.value)) ? "NOTHING" :
+                        'UPDATE SET value = CASE WHEN ABS(excluded.value::numeric) > ABS(company_accounts.value::numeric) THEN excluded.value ELSE company_accounts.value END'};`
             //this update should put the biggest absolute value in the accounts table
             await pool.query(accountsInsertSql, Object.values(fact))
                 .then(() => factsInserted++)
