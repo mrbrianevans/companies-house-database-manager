@@ -1,1 +1,3 @@
-/samples/financials/
+/samples/*
+**/*.env
+DataLake/.mongo.env

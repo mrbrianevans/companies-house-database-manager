@@ -1,8 +1,10 @@
 #!/bin/bash
+echo "Basic company information: download, unzip, move to Google Cloud Storage. Usually takes ~ 9 minutes"
+
 name="companies"
 remote_name="BasicCompanyDataAsOneFile"
 file_ext="csv"
-# This should download, unzip and copy to Google Cloud Storage the latest basic company data file
+# This should download, unzip and move to Google Cloud Storage the latest basic company data file
 
 
 files_dir="./files"
@@ -30,8 +32,6 @@ if test -f "$tmp_zipname"; then
 	echo "Already downloaded $name ZIP"
 else
 	echo "Downloading $name zip"
-
-
 	wget -nv -O "$tmp_zipname" "$url"
 	echo "Finished downloading $name ZIP"
 fi
@@ -47,4 +47,4 @@ else
 fi
 
 
-gsutil -h "x-goog-meta-data-source-url:$url" mv "$tmp_filename" "gs://companies-house-data-sources/$name.$file_ext"
+./loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"

@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "Downloading SIC codes file and moving to Google Cloud Storage. Usually takes ~ 1 second"
+
 name="sic"
 file_ext="csv"
 
@@ -16,5 +18,4 @@ else
 	echo "Finished downloading $name $file_ext file"
 fi
 
-
-gsutil -h "x-goog-meta-data-source-url:$url" mv "$tmp_filename" "gs://companies-house-data-sources/$name.$file_ext"
+./loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"

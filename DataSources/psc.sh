@@ -1,5 +1,8 @@
 #!/bin/bash
+echo "Persons with significant control: download, unzip, move to Google Cloud Storage. Usually takes ~11 minutes"
+
 name="psc"
+file_ext="json"
 remote_name="persons-with-significant-control-snapshot"
 # This should download, unzip and copy to Google Cloud Storage the latest persons with significant control file
 
@@ -7,7 +10,7 @@ remote_name="persons-with-significant-control-snapshot"
 today=$(date +"%Y-%m-%d")
 files_dir="./files"
 tmp_zipname="$files_dir/$name-$today.zip"
-tmp_filename="$files_dir/$name-$today.json"
+tmp_filename="$files_dir/$name-$today.$file_ext"
 original_name="$remote_name-${today}"
 url="http://download.companieshouse.gov.uk/$original_name.zip"
 
@@ -32,4 +35,4 @@ else
 fi
 
 
-gsutil -h "x-goog-meta-data-source-url:$url" mv "$tmp_filename" "gs://companies-house-data-sources/$name.json"
+./loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"

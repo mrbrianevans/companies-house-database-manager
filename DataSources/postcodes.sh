@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "Post codes detailed file: Downloading, unzipping and moving to Google Cloud Storage. Usually takes 4 minutes"
+
 name="postcodes"
 file_ext="csv"
 # This should download, unzip and copy to Google Cloud Storage the detailed postcodes file
@@ -31,4 +33,4 @@ else
 fi
 
 
-gsutil -h "x-goog-meta-data-source-url:$url" mv "$tmp_filename" "gs://companies-house-data-sources/$name.$file_ext"
+./loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"
