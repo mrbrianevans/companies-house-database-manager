@@ -11,8 +11,8 @@ url=$4
 # requires environment variables for authentication (~/data-manager/docker/.mongo.env)
 
 # run mongo import on that copied file
-mongoimport --db=bulk --drop --file "$tmp_filename" --type="$file_ext" \
- --username="$MONGO_INITDB_ROOT_USERNAME" --password="$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin \
+mongoimport --db=bulk --collection="$name" --drop --file "$tmp_filename" --type="$file_ext" \
+ --username="$MONGO_IMPORT_USER" --password="$MONGO_IMPORT_PASSWORD" --authenticationDatabase admin \
  $([ "$file_ext" == "csv" ] && echo "--headerline") --numInsertionWorkers=1 --host=dl --quiet
 
 # move to cloud

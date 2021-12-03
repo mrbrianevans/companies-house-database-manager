@@ -1,34 +1,36 @@
-{
+const min_uptime = '1m' // survive 1 minute for streams to count as "up"
+const max_restarts = 3
+module.exports = {
   "apps": [
     {
       "name": "filing-stream",
       "script": "streams/filing.js",
-      "min_uptime": "10s",
-      "max_restarts": 3
+      min_uptime,
+      max_restarts
     },
     {
       "name": "charges-stream",
       "script": "streams/charges.js",
-      "min_uptime": "10s",
-      "max_restarts": 3
+      min_uptime,
+      max_restarts
     },
     {
       "name": "companies-stream",
       "script": "streams/companies.js",
-      "min_uptime": "10s",
-      "max_restarts": 3
+      min_uptime,
+      max_restarts
     },
     {
       "name": "psc-stream",
       "script": "streams/psc.js",
-      "min_uptime": "10s",
-      "max_restarts": 3
+      min_uptime,
+      max_restarts
     },
     {
       "name": "officers-stream",
       "script": "streams/officers.js",
-      "min_uptime": "10s",
-      "max_restarts": 3
+      min_uptime,
+      max_restarts
     },
     {
       "name": "bulk-load-companies-basic",

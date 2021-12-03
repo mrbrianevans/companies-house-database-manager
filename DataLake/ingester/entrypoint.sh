@@ -4,4 +4,4 @@
 gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
 
 # start PM2 processes
-pm2-runtime processes.json
+pm2-runtime processes.config.js
