@@ -13,8 +13,20 @@
       "max_restarts": 3
     },
     {
-      "name": "insolvencies-stream",
-      "script": "streams/insolvencies.js",
+      "name": "companies-stream",
+      "script": "streams/companies.js",
+      "min_uptime": "10s",
+      "max_restarts": 3
+    },
+    {
+      "name": "psc-stream",
+      "script": "streams/psc.js",
+      "min_uptime": "10s",
+      "max_restarts": 3
+    },
+    {
+      "name": "officers-stream",
+      "script": "streams/officers.js",
       "min_uptime": "10s",
       "max_restarts": 3
     },
