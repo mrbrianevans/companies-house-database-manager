@@ -12,6 +12,8 @@ services:
     volumes:
       - BulkFiles:/BulkFiles
       - mongodata:/data
+    networks:
+      - lakenet
 
   ingester:
     build: 'ingester'
@@ -19,7 +21,16 @@ services:
     restart: on-failure
     volumes:
       - BulkFiles:/BulkFiles
+    networks:
+      - lakenet
+    env_file:
+      - .mongo.env
 
 volumes:
   BulkFiles:
   mongodata:
+
+
+networks:
+  lakenet:
+    driver: "bridge"

@@ -46,5 +46,5 @@ else
 	echo "Finished unzipping $name file to '$tmp_filename'"
 fi
 
-
-./loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"
+chmod +x /BulkLoadScripts/loadDocker.sh
+/BulkLoadScripts/loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"

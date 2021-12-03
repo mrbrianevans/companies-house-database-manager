@@ -18,4 +18,5 @@ else
 	echo "Finished downloading $name $file_ext file"
 fi
 
-./loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"
+chmod +x /BulkLoadScripts/loadDocker.sh
+/BulkLoadScripts/loadDocker.sh "$tmp_filename" "$name" "$file_ext" "$url"

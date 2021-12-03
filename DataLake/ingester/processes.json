@@ -2,42 +2,52 @@
   "apps": [
     {
       "name": "filing-stream",
-      "script": "./filing.js"
+      "script": "streams/filing.js",
+      "min_uptime": "10s",
+      "max_restarts": 3
     },
     {
       "name": "charges-stream",
-      "script": "./charges.js"
+      "script": "streams/charges.js",
+      "min_uptime": "10s",
+      "max_restarts": 3
     },
     {
       "name": "insolvencies-stream",
-      "script": "./insolvencies.js"
+      "script": "streams/insolvencies.js",
+      "min_uptime": "10s",
+      "max_restarts": 3
     },
     {
       "name": "bulk-load-companies-basic",
-      "script": "../BulkLoadScripts/companies.sh",
+      "script": "/BulkLoadScripts/companies.sh",
       "interpreter": "/bin/bash",
       "autorestart": false,
       "cron_restart": "00 00 5 * *"
     },
     {
       "name": "bulk-load-psc",
-      "script": "../BulkLoadScripts/psc.sh",
+      "script": "/BulkLoadScripts/psc.sh",
       "interpreter": "/bin/bash",
       "autorestart": false,
       "cron_restart": "00 10 * * *"
     },
     {
       "name": "bulk-load-postcodes",
-      "script": "../BulkLoadScripts/postcodes.sh",
+      "script": "/BulkLoadScripts/postcodes.sh",
       "interpreter": "/bin/bash",
       "autorestart": false,
       "cron_restart": "00 00 1 1 *"
     },
     {
       "name": "bulk-load-sic-codes",
-      "script": "../BulkLoadScripts/sic.sh",
+      "script": "/BulkLoadScripts/sic.sh",
       "interpreter": "/bin/bash",
       "autorestart": false
+    },
+    {
+      "name": "KeepAlive",
+      "script": "./keepalive.js"
     }
   ]
 }
