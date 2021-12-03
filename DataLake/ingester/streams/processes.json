@@ -1,0 +1,43 @@
+{
+  "apps": [
+    {
+      "name": "filing-stream",
+      "script": "./filing.js"
+    },
+    {
+      "name": "charges-stream",
+      "script": "./charges.js"
+    },
+    {
+      "name": "insolvencies-stream",
+      "script": "./insolvencies.js"
+    },
+    {
+      "name": "bulk-load-companies-basic",
+      "script": "../BulkLoadScripts/companies.sh",
+      "interpreter": "/bin/bash",
+      "autorestart": false,
+      "cron_restart": "00 00 5 * *"
+    },
+    {
+      "name": "bulk-load-psc",
+      "script": "../BulkLoadScripts/psc.sh",
+      "interpreter": "/bin/bash",
+      "autorestart": false,
+      "cron_restart": "00 10 * * *"
+    },
+    {
+      "name": "bulk-load-postcodes",
+      "script": "../BulkLoadScripts/postcodes.sh",
+      "interpreter": "/bin/bash",
+      "autorestart": false,
+      "cron_restart": "00 00 1 1 *"
+    },
+    {
+      "name": "bulk-load-sic-codes",
+      "script": "../BulkLoadScripts/sic.sh",
+      "interpreter": "/bin/bash",
+      "autorestart": false
+    }
+  ]
+}

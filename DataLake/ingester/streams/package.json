@@ -1,0 +1,11 @@
+{
+  "name": "companies-house-streams",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "clean": "tsc -b --clean"
+  },
+  "devDependencies": {
+    "typescript": "^4.2.3"
+  }
+}

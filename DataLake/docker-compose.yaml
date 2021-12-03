@@ -10,10 +10,16 @@ services:
     logging:
       driver: local
     volumes:
-      - DataSourceFiles:/DataSourceFiles
+      - BulkFiles:/BulkFiles
       - mongodata:/data
 
+  ingester:
+    build: 'ingester'
+    depends_on: [ dl ]
+    restart: on-failure
+    volumes:
+      - BulkFiles:/BulkFiles
+
 volumes:
-  DataSourceFiles:
-    external: true
+  BulkFiles:
   mongodata:
