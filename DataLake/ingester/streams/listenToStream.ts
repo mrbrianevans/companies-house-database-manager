@@ -1,9 +1,11 @@
 import https from "https";
 import {saveEventToMongo} from "./saveEventToMongo";
+import tx2 from 'tx2'
+
+const JSONStream = require('JSONStream')
 
 
 export function listenToStream<EventType extends { resource_id: string }>(path = 'companies', getId: (e: EventType) => string = e => e.resource_id, startFromTimepoint?: number) {
-  const JSONStream = require('JSONStream')
 
   const timepointQueryString = (typeof startFromTimepoint === "number") ? `?timepoint=${startFromTimepoint}` : ''
   const options: https.RequestOptions = {
@@ -30,7 +32,14 @@ export function listenToStream<EventType extends { resource_id: string }>(path =
     }
 
     const addId = (e: EventType) => ({...e, _id: getId(e)})
+    // Reporting Metrics:
+    // - both of these metrics include duplicates (so higher than events saved in DB)
+    // - the meter gives the average number of events per second during the last 5 minutes
+    const counter = tx2.counter(`${path} events`)
+    const meter = tx2.meter({name: `${path} events per sec`, samples: 1, timeframe: 300})
     res.pipe(JSONStream.parse())
+      .on('data', () => counter.inc())
+      .on('data', () => meter.mark())
       .on('data', saveEventToMongo(path, addId))
   })
 

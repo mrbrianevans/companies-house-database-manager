@@ -11,7 +11,7 @@ export const saveEventToMongo = <EventType>(collection: string, modifier: (e: Ev
   try {
     // @ts-ignore I cannot get the type override of _id to allow a string value
     await mongo.db('events').collection(collection).insertOne(newEvent)
-    console.log('Inserted event in', `events.${collection}`)
+    console.log('Inserted event in', `events.${collection}`, `id=${newEvent._id}`)
   } catch (e) {
     // if its a duplicate event, do nothing. otherwise, escalate error
     if (e instanceof MongoError && e.code != 11000) throw e
