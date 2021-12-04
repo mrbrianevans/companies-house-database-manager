@@ -25,6 +25,7 @@ services:
     env_file:
       - .mongo.env
       - .api.env
+      - .psql.env
 
 volumes:
   BulkFiles:
