@@ -10,7 +10,6 @@ services:
     logging:
       driver: local
     volumes:
-      - BulkFiles:/BulkFiles
       - mongodata:/data
     networks:
       - lakenet

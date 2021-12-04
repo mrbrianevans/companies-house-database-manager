@@ -18,6 +18,11 @@ RUN apt-get update && \
     apt-get update -y && \
     apt-get install google-cloud-sdk -y
 
+# install XSV (utility for processing CSV files)
+RUN wget https://github.com/BurntSushi/xsv/releases/download/0.13.0/xsv-0.13.0-x86_64-unknown-linux-musl.tar.gz && \
+tar --extract --file=xsv-0.13.0-x86_64-unknown-linux-musl.tar.gz && \
+mv xsv /usr/local/bin
+
 # copy the key into a volume
 VOLUME /.credentials
 COPY .credentials/gcp-key.json /.credentials/

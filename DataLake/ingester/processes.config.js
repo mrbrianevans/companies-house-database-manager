@@ -33,6 +33,12 @@ module.exports = {
       max_restarts
     },
     {
+      "name": "insolvencies-stream",
+      "script": "streams/insolvencies.js",
+      min_uptime,
+      max_restarts
+    },
+    {
       "name": "bulk-load-companies-basic",
       "script": "/BulkLoadScripts/companies.sh",
       "interpreter": "/bin/bash",
@@ -58,6 +64,12 @@ module.exports = {
       "script": "/BulkLoadScripts/sic.sh",
       "interpreter": "/bin/bash",
       "autorestart": false
+    },
+    {
+      "name": "bulk-load-officers",
+      "script": "/BulkLoadScripts/officers.sh",
+      "interpreter": "/bin/bash",
+      "autorestart": false,
     },
     {
       "name": "KeepAlive",
