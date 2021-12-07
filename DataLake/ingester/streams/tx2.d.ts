@@ -15,7 +15,7 @@ declare module 'tx2' {
     /**
      * Increment value
      */
-    inc()
+    inc(by: number = 1)
 
     /**
      * Decrement value

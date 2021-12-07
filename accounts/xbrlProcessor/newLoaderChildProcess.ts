@@ -22,7 +22,7 @@ const run = async () => {
     if (Number(fileIndex) % (files.length / 10) === 0) // every 10%, print a status update
       console.log('Done', fileIndex, 'files in', basename(directory), 'directory', new Date())
     const xbrlFilename = resolve(directory, file)
-    await processXbrlFile(xbrlFilename, pool).catch(e => console.error('Error in files loop', e))
+    await processXbrlFile(xbrlFilename, pool).catch(e => console.error('Error in files loop', basename(directory), e))
   }
   console.timeEnd(basename(directory))
 };

@@ -43,6 +43,11 @@ module.exports = {
       "script": "streams/accounts/backportAccountsFromPostgres.js",
       "autorestart": false,
     },
+    {
+      "name": "missing-filing-events",
+      "script": "streams/getMissingFilingEvents.js",
+      max_restarts
+    },
     // {
     //   "name": "bulk-load-companies-basic",
     //   "script": "/BulkLoadScripts/companies.sh",
@@ -50,13 +55,13 @@ module.exports = {
     //   "autorestart": false,
     //   "cron_restart": "00 00 5 * *"
     // },
-    {
-      "name": "bulk-load-psc",
-      "script": "/BulkLoadScripts/psc.sh",
-      "interpreter": "/bin/bash",
-      "autorestart": false,
-      "cron_restart": "00 10 * * *"
-    },
+    // {
+    //   "name": "bulk-load-psc",
+    //   "script": "/BulkLoadScripts/psc.sh",
+    //   "interpreter": "/bin/bash",
+    //   "autorestart": false,
+    //   "cron_restart": "00 10 * * *"
+    // },
     // {
     //   "name": "bulk-load-postcodes",
     //   "script": "/BulkLoadScripts/postcodes.sh",

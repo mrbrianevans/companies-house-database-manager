@@ -6,20 +6,12 @@ import {MongoClient, MongoError} from "mongodb";
 import {getMongoClient} from "../getMongoClient";
 import axios from "axios";
 import {getCompaniesHouseRateLimit, RateLimitHeaders} from "./CompaniesHouseApi";
+import {getPostgresPool} from "../getPostgresPool";
 
-export const getDatabasePool = (): Pool => {
-  return new Pool({
-    host: process.env.PGHOST,
-    user: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
-    database: process.env.PGDATABASE,
-    port: Number(process.env.PGPORT)
-  })
-}
 
 async function loadAccountsFromPostgres() {
   console.log('Started loading accounts into mongo at', new Date())
-  const pool = getDatabasePool()
+  const pool = getPostgresPool()
   const client = await pool.connect()
   const mongo = await getMongoClient('importer')
   const query = new QueryStream(`SELECT company_number      AS "companyNumber",
