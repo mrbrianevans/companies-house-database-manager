@@ -22,5 +22,5 @@ const loadAbstractDatabase = (absolutePathToDirectory: string) => {
 
 const juneFolder = 'C:/Users/bme/projects/companies-house-database-manager/samples/financials/zipped/2020-08-31'
 const decemberFolder = 'C:/Users/bme/projects/companies-house-database-manager/samples/financials/unzipped/2020-12-31'
-const commandLineFolder = process.args[2]
+const commandLineFolder = process.argv[2]
 loadAbstractDatabase(commandLineFolder || decemberFolder)
