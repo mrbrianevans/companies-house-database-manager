@@ -16,10 +16,24 @@ const run = async () => {
   const directory = process.argv[2]
   const pool = getDatabasePool()
   const files = await readdir(directory)
-  console.log(files.length, 'files in', basename(directory), 'running in pid', process.pid)
+  //slice directories here to start where accounts_tracker left off
+  const [, dirMonth, dirYear] = directory.match(/.Accounts_Monthly_Data-([a-zA-Z]+)(\d{4})/)
+  const sliceQuery = `SELECT company_number,
+                             date_part('year', accounts_date)  AS y,
+                             date_part('month', accounts_date) AS m,
+                             date_part('day', accounts_date)   AS d
+                      FROM accounts_tracker
+                      WHERE bulk_year = $1
+                        AND bulk_month = $2
+                      ORDER BY company_number DESC
+                      LIMIT 1;`
+  const sliceParams = [dirYear, dirMonth]
+  const lastDone = await pool.query(sliceQuery, sliceParams).then(res => res.rows[0]).then(row => new RegExp(`_${row.company_number}_${row.y}${row.m.toString().padStart(2, '0')}${row.d.toString().padStart(2, '0')}\.`))
+  const lastIndex = files.findIndex(name => name.match(lastDone))
+  console.log(files.length, 'files in', basename(directory), 'running in pid', process.pid, 'starting at', lastIndex)
   console.time(basename(directory))
-  for (const [fileIndex, file] of Object.entries(files)) {
-    if (Number(fileIndex) % (files.length / 10) === 0) // every 10%, print a status update
+  for (const [fileIndex, file] of Object.entries(files.slice(lastIndex))) {
+    if (Number(fileIndex) % (files.length / 20) === 0) // every 5%, print a status update
       console.log('Done', fileIndex, 'files in', basename(directory), 'directory', new Date())
     const xbrlFilename = resolve(directory, file)
     await processXbrlFile(xbrlFilename, pool).catch(e => console.error('Error in files loop', basename(directory), e))

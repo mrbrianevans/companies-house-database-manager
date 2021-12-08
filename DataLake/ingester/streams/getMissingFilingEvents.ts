@@ -16,6 +16,7 @@ async function getMissingFilingEvents() {
   const query = `SELECT company_number
                  FROM accounts_tracker
                  WHERE transaction_id IS NULL
+                 ORDER BY accounts_date
                  LIMIT 600`
   let list: string[]
   const companiesCounter = tx2.counter(`Companies`)
