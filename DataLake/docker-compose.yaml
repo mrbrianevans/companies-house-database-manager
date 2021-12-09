@@ -27,11 +27,35 @@ services:
       - .api.env
       - .psql.env
 
+  arango:
+    image: arangodb
+    volumes:
+      - arangodata:/var/lib/arangodb3
+    env_file:
+      - .arango.env
+    networks:
+      - arangonet
+  #  Enable port sharing to access the web console from a remote browser
+  #    ports:
+  #      - "8529:8529"
+  graph:
+    build: 'graph'
+    depends_on: [ arango ]
+    networks:
+      - lakenet
+      - arangonet
+    env_file:
+      - .arango.env
+
+
 volumes:
   BulkFiles:
   mongodata:
+  arangodata:
 
 
 networks:
   lakenet:
+    driver: "bridge"
+  arangonet:
     driver: "bridge"

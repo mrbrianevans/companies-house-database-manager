@@ -76,7 +76,7 @@ async function insertRawFilingEvent(
   pgPool?: Pool
 ) {
   const pool = pgPool ?? (await getPostgresPool())
-  const formattedDescription = await formatFilingDescription(filingEvent.description, filingEvent.description_values ?? {})
+  const formattedDescription = await formatFilingDescription(filingEvent.description, filingEvent.description_values ?? {}, pool)
   let insertParameters = [
     filingEvent.transaction_id,
     filingEvent.category,
@@ -117,14 +117,12 @@ async function insertRawFilingEvent(
 
 const formatFilingDescription: (
   descriptionCode: string,
-  descriptionValues: Record<string, string>
-) => Promise<string> = async (descriptionCode, descriptionValues) => {
-  const pool = getPostgresPool()
+  descriptionValues: Record<string, string>, pool: Pool
+) => Promise<string> = async (descriptionCode, descriptionValues, pool: Pool) => {
   const {rows: descriptions, rowCount} = await pool.query(
     'SELECT value FROM filing_history_descriptions WHERE key=$1 LIMIT 1',
     [descriptionCode]
   )
-  await pool.end()
   if (rowCount != 1) return camelCase(descriptionCode ?? '')
   const description = descriptions[0]['value']
   let formattedDescription = description.replace(
