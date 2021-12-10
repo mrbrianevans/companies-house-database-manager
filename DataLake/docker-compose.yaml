@@ -48,6 +48,9 @@ services:
       - arangonet
     env_file:
       - .arango.env
+      - .mongo.env
+    logging:
+      driver: local
 
   sql:
     build: 'psql'

@@ -1,16 +1,18 @@
 {
   "name": "graph",
   "version": "1.0.0",
-  "main": "index.js",
+  "exports": "./index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node index"
+    "start": "node build/index"
   },
   "dependencies": {
-    "arangojs": "^7.6.1"
+    "arangojs": "^7.6.1",
+    "mongodb": "^4.2.1"
   },
   "devDependencies": {
+    "@types/mongodb": "^4.0.7",
     "typescript": "^4.5.2"
   }
 }
