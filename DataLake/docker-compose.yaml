@@ -13,6 +13,8 @@ services:
       - mongodata:/data
     networks:
       - lakenet
+    ports:
+      - "27017:27017"
 
   ingester:
     build: 'ingester'
@@ -47,15 +49,27 @@ services:
     env_file:
       - .arango.env
 
+  sql:
+    image: postgres
+    ports:
+      - "5432:5432"
+    env_file:
+      - .psql.env
+    volumes:
+      - psqldata:/var/lib/postgresql/data
+    networks:
+      - psqlnet
 
 volumes:
   BulkFiles:
   mongodata:
   arangodata:
-
+  psqldata:
 
 networks:
   lakenet:
     driver: "bridge"
   arangonet:
+    driver: "bridge"
+  psqlnet:
     driver: "bridge"

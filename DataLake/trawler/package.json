@@ -1,0 +1,18 @@
+{
+  "name": "trawler",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "mongodb": "^4.2.2",
+    "pg": "^8.7.1"
+  },
+  "devDependencies": {
+    "@types/mongodb": "^4.0.7",
+    "@types/pg": "^8.6.3",
+    "typescript": "^4.5.4"
+  }
+}
