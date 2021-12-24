@@ -1,7 +1,7 @@
 import {MongoClient} from "mongodb"
 
 export const getMongoClient = async (user: 'eventer' | 'importer' = 'eventer') => {
-    const mongo = new MongoClient("mongodb://dl:27017", {
+    const mongo = new MongoClient("mongodb://localhost:27017", {
         auth: user === 'importer' ? {
             username: process.env.MONGO_IMPORT_USER,
             password: process.env.MONGO_IMPORT_PASSWORD

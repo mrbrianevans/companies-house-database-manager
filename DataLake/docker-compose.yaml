@@ -51,12 +51,14 @@ services:
 
   sql:
     image: postgres
+    restart: on-failure
     ports:
       - "5432:5432"
     env_file:
       - .psql.env
     volumes:
       - psqldata:/var/lib/postgresql/data
+    # need to copy sql schema to init db area
     networks:
       - psqlnet
 
