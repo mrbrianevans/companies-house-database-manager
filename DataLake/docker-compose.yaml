@@ -50,7 +50,7 @@ services:
       - .arango.env
 
   sql:
-    image: postgres
+    build: 'psql'
     restart: on-failure
     ports:
       - "5432:5432"

@@ -10,12 +10,11 @@ async function loadCompanies() {
     console.log('Looping through companies')
     // loop through all companies, inserting them into postgres
     for await (const company of companies) {
-        // await pool.query(`
-        //     INSERT INTO companies
-        //     (name, number, streetaddress, county, country, postcode,
-        //      category, origin, status, date, can_file)
-        //     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
-        // `,[company.CompanyName])
+        await pool.query(`
+            INSERT INTO companies1
+            (last_updated, company_name, company_number, postcode, address_line_1, incorporation_date)
+            VALUES (default, $1, $2, $3, $4, $5);
+        `, [company.CompanyName, company.CompanyNumber])
         console.log(company.CompanyNumber, Date.now())
     }
 
