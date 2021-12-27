@@ -1,5 +1,7 @@
 import {getPostgresClient} from "../dbUtils/getPostgresClient.js";
 import {getMongoClient} from "../dbUtils/getMongoClient.js";
+import {Counter} from '../Counter.js'
+import {mutateObj} from "../utils/ArrayUtils.js";
 
 interface Accounts {
     _id: string,
@@ -47,41 +49,131 @@ async function loadAccounts() {
     const pool = getPostgresClient()
     const mongo = await getMongoClient('importer')
 
-    const accounts = mongo.db('bulk').collection<Accounts>('accounts').find().limit(50)
-
+    const accounts = mongo.db('bulk')
+        .collection<Accounts>('accounts')
+        //accounts-with-accounts-type-dormant, accounts-with-accounts-type-micro-entity, accounts-with-accounts-type-total-exemption-full
+        .find({numberOfFacts: {$gt: 100}})
+        .limit(50)
+    const periodCounter = new Counter()
+    const instantCounter = new Counter()
     console.log('Looping through accounts')
     // loop through all companies, inserting them into postgres
     for await (const account of accounts) {
-        console.log(account.companyNumber, Date.now())
+        const instantLabels = new Set<string>()
+        const periodLabels = new Set<string>()
+        account.facts.forEach((fact) => {
+            if ('startDate' in fact) {
+                periodLabels.add(fact.label)
+            } else {
+                instantLabels.add(fact.label)
+            }
+        })
+        periodLabels.forEach(label => periodCounter.increment(label))
+        instantLabels.forEach(label => instantCounter.increment(label))
+
+        // console.log(account.companyNumber, Date.now())
 
         const getFirstValue = (label: string) => {
             return account.facts.find(fact => fact.label == label)?.value ?? null
         }
         const getAllValues = (label: string) => {
-            return account.facts.filter(fact => fact.label == label).map(fact => fact.value)
+            return Array.from(new Set(account.facts.filter(fact => fact.label == label).map(fact => fact.value)))
         }
         const getInstantValues = (label: string) => {
-            return Object.fromEntries(account.facts.filter(fact => fact.label == label).map(fact => [fact.endDate, fact.value]))
+            return Object.fromEntries(account.facts.filter(fact => fact.label == label)
+                .map(fact => [fact.endDate, fact.value.match(/^-?\d+$/) ? parseFloat(fact.value) : fact.value]))
+        }
+        const getAllPeriodValues = (label: string) => {
+            return Object.fromEntries(account.facts.filter(fact => fact.label == label)
+                .map(fact => [fact.endDate, fact.value]))
         }
 
-        const companyNumber = getFirstValue('UK Companies House registered number')
-        const companyName = getFirstValue('Entity current legal or registered name')
+        const financialLabels = Object.keys(filedInstantLabels)
+        const financials: Record<typeof financialLabels[number], Record<string, string | number> | null> = Object.fromEntries(financialLabels.map(l => [l, null]));
+        for (const [financial,] of Object.entries(filedInstantLabels)) {
+            financials[financial] = getInstantValues(financial)
+        }
+        const periodValues: Record<string, Record<string, string | number> | null> = Object.fromEntries(Object.keys(filedPeriodLabels).map(l => [l, null]));
+        for (const [label,] of Object.entries(filedPeriodLabels)) {
+            periodValues[label] = getAllPeriodValues(label)
+        }
+        const capturedValues = {...periodValues, ...financials}
+        const getOnlyValue = <T>(obj: Record<string, T> | null): T | null => {
+            if (obj === null || obj === undefined) return obj
+            if (account.accountsDate in obj) return obj[account.accountsDate]
+            else if (Object.keys(obj).length === 1) return Object.values(obj)[0]
+            else return null
+            throw new Error('Cant find only value in ' + JSON.stringify(obj, null, 1))
+        }
+        const onlyValues = mutateObj(capturedValues, getOnlyValue)
+        // console.log(onlyValues)
+
+        const companyName = onlyValues['Entity current legal or registered name']
+        const companyNumber = onlyValues['UK Companies House registered number']
         const officers = getAllValues('Name of entity officer')
-        const equity = getInstantValues('Equity')
-        const employees = getFirstValue('Average number of employees during the period')
-        console.log({companyNumber, companyName, officers, equity})
-//         await pool.query(`
-//         INSERT INTO companies1
-// (last_updated, company_name, company_number, incorporation_date, can_file, accounts_category,
-//  latest_accounts_filing_id, balance_sheet_date, accountants, accounting_software, employees,
-//  current_assets, cash_at_bank, debtors, creditors, fixed_assets, net_assets,
-//  total_assets_less_current_liabilities, equity, revenue, profit, accounts_officers)
-// VALUES (default, $1, $2, $3, TRUE, $5);
-//         `)
+        const postcode = onlyValues['Postal Code / Zip']
+        const dormant = Boolean(onlyValues['Entity is dormant [true/false]'])
+        const software = onlyValues['Name of production software']
+        const accountants = onlyValues['Name of entity accountants']
+        const employees = onlyValues['Average number of employees during the period']
+        const endDate = onlyValues['End date for period covered by report']
+        const balanceSheetDate = onlyValues['Balance sheet date']
+        const startDate = onlyValues['Start date for period covered by report']
+        const equity = onlyValues['Equity']
+        const totalAssetsLessCurrentLiabilities = onlyValues['Total assets less current liabilities']
+        const netAssets = onlyValues['Net assets (liabilities)']
+        const netCurrentAssets = onlyValues['Net current assets (liabilities)']
+        const currentAssets = onlyValues['Current assets']
+        const creditors = onlyValues['Creditors']
+        const revenue = onlyValues['Turnover / revenue']
+        const profit = onlyValues['Profit (loss)']
+        // console.log({companyName,companyNumber,officers,postcode,dormant,software,employees,endDate,
+        // balanceSheetDate,startDate,equity,totalAssetsLessCurrentLiabilities,netAssets,netCurrentAssets,
+        //     currentAssets,creditors,revenue,profit
+        // })
+        await pool.query(`
+            INSERT INTO companies
+            (last_updated, company_name, company_number, postcode, start_date, end_date, dormant,
+             latest_accounts_filing_id, balance_sheet_date, accountants, accounting_software, employees,
+             current_assets, creditors, net_assets, net_current_assets,
+             total_assets_less_current_liabilities, equity, revenue, profit, accounts_officers)
+            VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            ON CONFLICT ON CONSTRAINT companies_pkey DO NOTHING
+            ;
+        `, [companyName, companyNumber, postcode, startDate, endDate, dormant,
+            account._id, balanceSheetDate, accountants,
+            software, employees, currentAssets, creditors, netAssets, netCurrentAssets,
+            totalAssetsLessCurrentLiabilities,
+            equity, revenue, profit, officers])
+
     }
 
     await pool.end()
     await mongo.close()
+}
+
+const filedPeriodLabels = {
+    'Entity is dormant [true/false]': 500,
+    'Entity current legal or registered name': 500,
+    'UK Companies House registered number': 500,
+    'Name of entity officer': 498,
+    'Name of production software': 483,
+    'Name of entity accountants': 49,
+    'Postal Code / Zip': 146,
+}
+const filedInstantLabels = {
+    'Average number of employees during the period': 500, //this is actually a period value, but should be stored as an instant
+    'End date for period covered by report': 500,
+    'Balance sheet date': 500,
+    'Start date for period covered by report': 500,
+    Equity: 489,
+    'Total assets less current liabilities': 483,
+    'Net assets (liabilities)': 480,
+    'Net current assets (liabilities)': 472,
+    'Current assets': 446,
+    Creditors: 430,
+    'Turnover / revenue': 33,
+    'Profit (loss)': 33,
 }
 
 await loadAccounts()
