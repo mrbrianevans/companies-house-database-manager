@@ -1,64 +1,30 @@
-# What is this unit for?
+# Companies House database manager
 
-This compute unit / droplet is to load the database.
+## Docker usage
 
-This should have a cron job to fetch data from Companies House and ingest it and save it in
-PostGreSQL Database.
+Docker is used by this database manager to run the database engines and data loading scripts. Docker compose
+configuration is in the `DataLake`
+directory.
 
-Then the backend hosted on App Platform under companies-house-frontend will serve the database data
-to the frontend through nextJS.
+## Database pipeline
 
-The frontend will be a way to interact with it.
+### Data lake
 
-## Scripts to update the database:
+[MongoDB](https://brianevans.wiki/en/database/nosql/mongo)
+is used as a datalake to store data imported from the original data sources. The general process for loading data is
+this:
 
-### Basic company information
+1. Download file
+2. Unzip
+3. `mongoimport` to database
 
-Download, unzip and process an individual zip file (parts or whole)
+These scripts are written in bash and located in
+`DataLake/ingester/BulkLoadScripts`.
 
-```shell
-./get_latest_bcd.sh "filename of latest.zip"
-```
+They are run on cron job timers by pm2, listed in
+`DataLake/ingester/processes.config.js`.
 
-Automatically download, unzip and process the 6 individual smaller downloads. Takes the date as an
-arg (recommended)
+### Data warehouse
 
-```shell
-./update_basic_parts.sh "date of latest eg: 2021-01-01"
-```
+PostgreSQL is used as a data warehouse.
 
-Process a csv file which has already been downloaded and unzipped (with progress bar)
-
-```shell
-node companies-house-database-manager/basic-csv-to-db.js ../downloads/unzipped/name_of_file
-```
-
-### Financials
-
-Downloads todays financial file, unzips and processes it
-
-```shell
-./process_financials.sh
-```
-
-Downloads a specific financial file, unzips and processes it
-
-```shell
-./process_financials.sh 2020-08-05
-```
-
-### Sic descriptions
-
-Downloads a CSV of the latest SIC code descriptions and uploads them to the database
-
-```shell
-./update_sic_map.sh
-```
-
-## Schedule
-
-Once a day should run `./process_financials.sh`
-
-Once a month should run `./get_latest_bcd.sh`
-
-Once a year should run `./update_sic_map.sh`
