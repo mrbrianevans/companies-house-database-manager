@@ -13,9 +13,9 @@ echo "Loading $1 to $2 collection in mongo"
 # run mongo import on that copied file
 mongoimport --db=bulk --collection="$name" --drop --file "$tmp_filename" --type="$file_ext" \
  --username="$MONGO_IMPORT_USER" --password="$MONGO_IMPORT_PASSWORD" --authenticationDatabase admin \
- $([ "$file_ext" == "csv" ] && echo "--headerline") --numInsertionWorkers=1 --host=dl --quiet
+ $([ "$file_ext" == "csv" ] && echo "--headerline") --numInsertionWorkers=2 --host=dl --quiet
 
 # move to cloud, compresses with gzip (-Z)
 storage_class="standard" #can be standard, nearline, coldline or archive
 echo "Moving $tmp_filename file to Google Cloud Storage"
-time gsutil -q -h "x-goog-meta-data-source-url:$url" mv -Z -s "$storage_class" "$tmp_filename" "gs://companies-house-data-sources/$name.$file_ext"
+#time gsutil -q -h "x-goog-meta-data-source-url:$url" mv -Z -s "$storage_class" "$tmp_filename" "gs://companies-house-data-sources/$name.$file_ext"

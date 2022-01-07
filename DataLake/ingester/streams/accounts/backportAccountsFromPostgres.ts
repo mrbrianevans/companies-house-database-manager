@@ -20,7 +20,7 @@ async function loadAccountsFromPostgres() {
                                         csv_scanned         AS "csvScanned"
                                  FROM accounts_scanned
                                  ORDER BY accounts_date DESC, company_number
-                                 LIMIT 1000000`)
+                                 LIMIT 100000`)
   const pgStream = client.query(query)
   await new Promise((resolve, reject) => {
     pgStream

@@ -28,62 +28,62 @@ module.exports = {
     },
     {
       "name": "officers-stream",
-      "script": "streams/officers.js",
-      min_uptime,
-      max_restarts
+        "script": "streams/officers.js",
+        min_uptime,
+        max_restarts
     },
-    {
-      "name": "insolvencies-stream",
-      "script": "streams/insolvencies.js",
-      min_uptime,
-      max_restarts
-    },
-    {
-      "name": "backport-accounts",
-      "script": "streams/accounts/backportAccountsFromPostgres.js",
-      "autorestart": false,
-    },
-    {
-      "name": "missing-filing-events",
-      "script": "streams/getMissingFilingEvents.js",
-      max_restarts
-    },
-    // {
-    //   "name": "bulk-load-companies-basic",
-    //   "script": "/BulkLoadScripts/companies.sh",
+      {
+          "name": "insolvencies-stream",
+          "script": "streams/insolvencies.js",
+          min_uptime,
+          max_restarts
+      },
+      // {
+      //   "name": "backport-accounts",
+      //   "script": "streams/accounts/backportAccountsFromPostgres.js",
+      //   "autorestart": false,
+      // },
+      // {
+      //   "name": "missing-filing-events",
+      //   "script": "streams/getMissingFilingEvents.js",
+      //   max_restarts
+      // },
+      // {
+      //   "name": "bulk-load-companies-basic",
+      //   "script": "/BulkLoadScripts/companies.sh",
+      //   "interpreter": "/bin/bash",
+      //   "autorestart": false,
+      //   "cron_restart": "00 00 5 * *"
+      // },
+      // {
+      //   "name": "bulk-load-psc",
+      //   "script": "/BulkLoadScripts/psc.sh",
     //   "interpreter": "/bin/bash",
-    //   "autorestart": false,
-    //   "cron_restart": "00 00 5 * *"
-    // },
-    // {
-    //   "name": "bulk-load-psc",
-    //   "script": "/BulkLoadScripts/psc.sh",
-    //   "interpreter": "/bin/bash",
-    //   "autorestart": false,
-    //   "cron_restart": "00 10 * * *"
-    // },
-    // {
-    //   "name": "bulk-load-postcodes",
-    //   "script": "/BulkLoadScripts/postcodes.sh",
-    //   "interpreter": "/bin/bash",
-    //   "autorestart": false,
-    //   "cron_restart": "00 00 1 1 *"
-    // },
-    // {
-    //   "name": "bulk-load-sic-codes",
-    //   "script": "/BulkLoadScripts/sic.sh",
-    //   "interpreter": "/bin/bash",
-    //   "autorestart": false
-    // },
-    // {
-    //   "name": "bulk-load-officers",
-    //   "script": "/BulkLoadScripts/officers.sh",
-    //   "interpreter": "/bin/bash",
-    //   "autorestart": false,
-    // },
-    {
-      "name": "KeepAlive",
-      "script": "./keepalive.js"
-    }
+      //   "autorestart": false,
+      //   "cron_restart": "00 10 * * *"
+      // },
+      // {
+      //   "name": "bulk-load-postcodes",
+      //   "script": "/BulkLoadScripts/postcodes.sh",
+      //   "interpreter": "/bin/bash",
+      //   "autorestart": false,
+      //   "cron_restart": "00 00 1 1 *"
+      // },
+      {
+          "name": "bulk-load-sic-codes",
+          "script": "/BulkLoadScripts/sic.sh",
+          "interpreter": "/bin/bash",
+          "autorestart": false
+      },
+      // {
+      //   "name": "bulk-load-officers",
+      //   "script": "/BulkLoadScripts/officers.sh",
+      //   "interpreter": "/bin/bash",
+      //   "autorestart": false,
+      // },
+      {
+          "name": "KeepAlive",
+          "script": "./keepalive.js"
+      }
   ]
 }

@@ -5,5 +5,5 @@ tsc && gcloud functions deploy TODO --region=europe-west1 --trigger-topic=TODO -
 
 gcloud functions deploy getCompanyInfo --region=europe-west1 --trigger-http --entry-point=getCompanyInfo --runtime=nodejs12 --timeout=60 --set-env-vars=PGUSER=events_freq_cloud_func,PGPASSWORD=QVrgRHFSpXXT7ts,PGHOST="/cloudsql/companies-house-data:europe-west1:filter-facility-db",PGPORT=5432,PGDATABASE=postgres --max-instances=1 --memory=128MB
 
-gcloud functions deploy getCompanyInfoGo --region=europe-west1 --trigger-http --entry-point=GetCompanyInfo --runtime=go113 --allow-unauthenticated --timeout=60 --set-env-vars=PGUSER=events_freq_cloud_func,PGPASSWORD=QVrgRHFSpXXT7ts,PGHOST="/cloudsql/companies-house-data:europe-west1:filter-facility-db",PGPORT=5432,PGDATABASE=postgres --max-instances=1 --memory=128MB
+gcloud functions deploy getCompanyInfoPython --region=europe-west1 --trigger-http --entry-point=get_company_info --runtime=python38 --allow-unauthenticated --timeout=60 --set-env-vars=PGUSER=events_freq_cloud_func,PGPASSWORD=QVrgRHFSpXXT7ts,PGHOST="/cloudsql/companies-house-data:europe-west1:filter-facility-db",PGPORT=5432,PGDATABASE=postgres --max-instances=1 --memory=128MB
 

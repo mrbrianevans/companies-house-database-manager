@@ -24,7 +24,9 @@ async function getMissingFilingEvents() {
   const filingCounter = tx2.counter(`Filing events`)
   do {
     const pool = getPostgresPool() // new pool after every 600 companies
-    list = await pool.query(query).then((res) => res.rows.map((row) => row.company_number))
+    list = await pool.query(query)
+        .then((res) => res.rows.map((row) => row.company_number))
+        .then(a => Array.from(new Set(a))) // unique
     for (const companyNumber of list) {
       try {
         const filingItem = await getFilingHistoryFromApi(companyNumber)
@@ -92,14 +94,14 @@ async function insertRawFilingEvent(
   ]
   await pool
     .query(
-      `
+        `
           INSERT INTO filing_events
           (id, category, description_code, description_values, description, filing_date, timepoint,
            published, barcode, type, company_number)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           ON CONFLICT (id) DO UPDATE SET description_values=excluded.description_values,
                                          description=excluded.description;`,
-      insertParameters
+        insertParameters
     )
     .catch((e) => console.error('ERROR:', e.message, 'DESCRIPTION: ', filingEvent.description))
 
