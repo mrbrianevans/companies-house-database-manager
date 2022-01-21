@@ -7,6 +7,7 @@ import {getMongoClient} from "../getMongoClient";
 import axios from "axios";
 import {getCompaniesHouseRateLimit, RateLimitHeaders} from "./CompaniesHouseApi";
 import {getPostgresPool} from "../getPostgresPool";
+import {MongoAccounts} from "./MongoAccounts";
 
 
 async function loadAccountsFromPostgres() {
@@ -91,7 +92,7 @@ async function loadAccountsIntoMongo({
     .then(res => res.rows[0])
   if (!filingEvent) return
   // filingEvent ??= await getFilingEventFromApi(companyNumber, accountsDate)
-  const document = {
+  const document: Omit<MongoAccounts, '_id'> = {
     companyNumber,
     accountsDate,
     numberOfFacts,

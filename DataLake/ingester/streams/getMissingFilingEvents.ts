@@ -29,18 +29,8 @@ async function getMissingFilingEvents() {
         .then(a => Array.from(new Set(a))) // unique
     for (const companyNumber of list) {
       try {
-        const filingItem = await getFilingHistoryFromApi(companyNumber)
-        if (filingItem.filing_history_status !== 'filing-history-available') {
-          continue
-        }
-        const itemsReturned = filingItem.items.length
-        if (itemsReturned !== filingItem.total_count)
-          console.log(`Only returned ${itemsReturned}/${filingItem.total_count} filing events for ${companyNumber}`)
-
-        for (const chunk of chunkArr(filingItem.items, 20)) {
-          await Promise.all(chunk.map((item) => insertRawFilingEvent(item, companyNumber, pool)))
-        }
-        filingCounter.inc(itemsReturned)
+        const loadedEvents = await loadFilingEventsIntoPostgres(companyNumber, pool)
+        filingCounter.inc(loadedEvents?.itemsReturned ?? 0)
         companiesCounter.inc()
       } catch (e) {
         console.log('Failed on companyNumber=', companyNumber, 'at', Date.now())
@@ -54,25 +44,47 @@ async function getMissingFilingEvents() {
 
 }
 
-async function getFilingHistoryFromApi(companyNumber: string): Promise<FilingHistory.IFilingHistory> {
+export async function loadFilingEventsIntoPostgres(companyNumber: string, pool: Pool) {
+  try {
+    const filingItem = await getFilingHistoryFromApi(companyNumber)
+    if (filingItem.filing_history_status !== 'filing-history-available') {
+      return null
+    }
+    const itemsReturned = filingItem.items.length
+    if (itemsReturned !== filingItem.total_count)
+      console.log(`Only returned ${itemsReturned}/${filingItem.total_count} filing events for ${companyNumber}`)
+    console.time(`Insert ${itemsReturned} filing events`)
+    for (const chunk of chunkArr(filingItem.items, 20)) {
+      await Promise.all(chunk.map((item) => insertRawFilingEvent(item, companyNumber, pool)))
+    }
+    console.timeEnd(`Insert ${itemsReturned} filing events`)
+    return {itemsReturned}
+  } catch (e) {
+    console.log('Failed on companyNumber=', companyNumber, 'at', Date.now())
+    console.error(e)
+  }
+}
+
+export async function getFilingHistoryFromApi(companyNumber: string): Promise<FilingHistory.IFilingHistory> {
   const apiUrl = `https://api.company-information.service.gov.uk/company/${companyNumber}/filing-history?items_per_page=100&category=accounts`
-  // console.log('GET', apiUrl)
+  console.time('GET ' + apiUrl)
   const res = await axios.get(apiUrl, {
     auth: {username: process.env.APIUSER ?? '', password: ''}
   }).catch(e => e.response)
+  console.timeEnd('GET ' + apiUrl)
   if (res.status !== 200) console.log('Response Status:', res.status, res.statusText)
   const rateLimit = getCompaniesHouseRateLimit(res.headers)
   if (rateLimit.remain <= 2) await sleepRateLimit(rateLimit)
   return res.data
 }
 
-async function sleepRateLimit(rateLimit: RateLimitHeaders) {
+export async function sleepRateLimit(rateLimit: RateLimitHeaders) {
   const delay = Math.max(0, (rateLimit.reset * 1000 - Date.now())) + 10000
   console.log('Hit rate limit, sleeping', delay.toFixed(1), 'milliseconds')
   await new Promise((resolve) => setTimeout(resolve, delay))
 }
 
-async function insertRawFilingEvent(
+export async function insertRawFilingEvent(
   filingEvent: FilingHistory.FilingHistoryItem,
   companyNumber: string,
   pgPool?: Pool
@@ -135,4 +147,4 @@ const formatFilingDescription: (
   return formattedDescription.toString()
 }
 
-getMissingFilingEvents()
+// getMissingFilingEvents()
