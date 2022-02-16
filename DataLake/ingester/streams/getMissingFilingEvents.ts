@@ -5,8 +5,9 @@ import {FilingHistory} from "./accounts/IFilingEvents";
 import {Pool} from "pg";
 import tx2 from "tx2";
 
-const camelCase = require('camelcase')
-const snake = require('snakecase-keys')
+import camelCase from 'camelcase';
+import snake from 'snakecase-keys';
+import {Readable} from "stream";
 
 const chunkArr = <T>(arr: T[], size: number): T[][] =>
 // @ts-ignore
@@ -53,11 +54,15 @@ export async function loadFilingEventsIntoPostgres(companyNumber: string, pool: 
     const itemsReturned = filingItem.items.length
     if (itemsReturned !== filingItem.total_count)
       console.log(`Only returned ${itemsReturned}/${filingItem.total_count} filing events for ${companyNumber}`)
-    console.time(`Insert ${itemsReturned} filing events`)
-    for (const chunk of chunkArr(filingItem.items, 20)) {
-      await Promise.all(chunk.map((item) => insertRawFilingEvent(item, companyNumber, pool)))
-    }
-    console.timeEnd(`Insert ${itemsReturned} filing events`)
+    // console.time(`Insert ${itemsReturned} filing events for ${companyNumber}`)
+    const concurrency = 1
+    // @ts-ignore
+    await Readable.from(filingItem.items).map((item) => insertRawFilingEvent(item, companyNumber, pool), {concurrency}).toArray()
+
+    // for (const chunk of chunkArr(filingItem.items, 20)) {
+    //   await Promise.all(chunk.map((item) => insertRawFilingEvent(item, companyNumber, pool)))
+    // }
+    // console.timeEnd(`Insert ${itemsReturned} filing events for ${companyNumber}`)
     return {itemsReturned}
   } catch (e) {
     console.log('Failed on companyNumber=', companyNumber, 'at', Date.now())
@@ -67,14 +72,14 @@ export async function loadFilingEventsIntoPostgres(companyNumber: string, pool: 
 
 export async function getFilingHistoryFromApi(companyNumber: string): Promise<FilingHistory.IFilingHistory> {
   const apiUrl = `https://api.company-information.service.gov.uk/company/${companyNumber}/filing-history?items_per_page=100&category=accounts`
-  console.time('GET ' + apiUrl)
+  // console.time('GET ' + apiUrl)
   const res = await axios.get(apiUrl, {
     auth: {username: process.env.APIUSER ?? '', password: ''}
   }).catch(e => e.response)
-  console.timeEnd('GET ' + apiUrl)
+  // console.timeEnd('GET ' + apiUrl)
   if (res.status !== 200) console.log('Response Status:', res.status, res.statusText)
   const rateLimit = getCompaniesHouseRateLimit(res.headers)
-  if (rateLimit.remain <= 2) await sleepRateLimit(rateLimit)
+  if (rateLimit.remain <= 41) await sleepRateLimit(rateLimit)
   return res.data
 }
 

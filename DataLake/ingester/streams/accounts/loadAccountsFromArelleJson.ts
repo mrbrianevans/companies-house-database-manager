@@ -4,16 +4,18 @@ import {ArelleJsonAccounts} from "./ArelleJsonAccounts";
 import {MongoAccounts} from "./MongoAccounts";
 import {loadFilingEventsIntoPostgres} from "../getMissingFilingEvents";
 import {getPostgresPool} from "../getPostgresPool";
-
+import {Readable} from 'stream';
+import {Pool} from "pg";
 // directory containing *only* JSON files from Arelle
 const ROOT_DIR = 'N:\\CompaniesHouse\\Accounts\\JSON'
 const OUT_DIR = 'N:\\CompaniesHouse\\Accounts\\MongoAccounts'
 
-async function loadAccountsFromArelleJson() {
+async function loadAccountsFromArelleJson(limit: null | number = null) {
 
   const dimensions = await getDimensions()
   console.time('Get list of files')
-  const fileList = await getListOfFiles()
+  // shuffle files to reduce chance of conflict. could be improved by keeping a Set of company numbers queried on the API
+  const fileList = await getListOfFiles(limit).then(files => files.sort(() => Math.random() - 0.5))
   console.timeEnd('Get list of files')
   let fileCounter = 0
   const fileIterator: AsyncIterator<{ filename: string, facts: ArelleJsonAccounts }> = {
@@ -32,11 +34,18 @@ async function loadAccountsFromArelleJson() {
   const fileIterable = {
     [Symbol.asyncIterator]: () => fileIterator
   }
-  for await(const {facts, filename} of fileIterable) {
-    const mongoFacts = convertArelleToMongoAccounts(facts, dimensions)
-    const mongoDoc = await getMongoAccounts(mongoFacts, filename)
-    await saveMongoAccounts(mongoDoc)
+  console.time('Finished processing')
+  const concurrency = 40
+  // @ts-ignore
+  const docs = Readable.from(fileIterable).map(({
+                                                  facts,
+                                                  filename
+                                                }) => getMongoAccounts(convertArelleToMongoAccounts(facts, dimensions), filename), {concurrency})
+  for await(const doc of docs) {
+    await saveMongoAccounts(doc)
   }
+  console.timeEnd('Finished processing')
+  console.log("Processed", fileCounter, 'files')
 }
 
 async function getDimensions(): Promise<Map<string, string>> {
@@ -46,10 +55,10 @@ async function getDimensions(): Promise<Map<string, string>> {
   return new Map(Object.entries(object))
 }
 
-async function getListOfFiles(): Promise<string[]> {
+async function getListOfFiles(limit: null | number): Promise<string[]> {
   const files = await fs.readdir(ROOT_DIR, {withFileTypes: true})
   const doneFiles = new Set(await fs.readdir(OUT_DIR))
-  return files.filter(f => f.isFile()).filter(f => f.name).filter(f => !doneFiles.has(f.name)).map(f => f.name).slice(0, 10000)
+  return files.filter(f => f.isFile()).filter(f => f.name).filter(f => !doneFiles.has(f.name)).map(f => f.name).slice(0, limit ?? undefined)
 }
 
 async function getFile(filepath: string) {
@@ -65,15 +74,15 @@ function renameDimensions(mapper: Map<string, string>, obj?: Record<string, stri
   if (!obj) return undefined
   return Object.fromEntries(Object.entries(obj).map(([key, value]) => {
     const newKey = mapper?.get(key.replace(/^.*:/, ''))?.match(/^(?:\(via targetRole\) )?(?:x-)?(.+) \[.+]/)
-    if (!newKey?.[1]) console.log('COUNT NOT REPLACE () for KEY:', key, key.replace(/^.*:/, ''), mapper?.get(key.replace(/^.*:/, '')), newKey)
+    if (!newKey?.[1]) console.log('COUNT NOT REPLACE () for KEY: ' + key)
     const newValue = mapper?.get(value.replace(/^.*:/, ''))
-    if (!newValue && value !== 'None') console.log('COULD NOT FIND VALUE:', value)
+    if (!newValue && value !== 'None') console.log('COULD NOT FIND VALUE: ' + value)
     //todo:
     // there are some dimensions not in the map yet:
     // COUNT NOT REPLACE () for KEY: char:CharityFundsDimension CharityFundsDimension undefined undefined
     // COULD NOT FIND VALUE: char:TotalRestrictedIncomeFunds
-    // .
-    // the char namespace for charities, also the ns22 namespace for charities
+    // . b:CharityFundsDimension, uk-bus:ShareClassesDimension,uk-gaap-cd-bus:ShareClassesDimension
+    // the char namespace for charities, also the ns22 namespace for charities, also the b namespace
     // see 00157327_2020-12-31 as an example. results in things like Trustee6 with no space
     return [newKey?.[1], newValue ?? value.replace(/^.*:/, '')]
   }))
@@ -111,13 +120,8 @@ async function getMongoAccounts(facts: MongoAccounts['facts'], filename: string)
   }
 }
 
-
-async function getFilingEvent(companyNumber: string, accountsDate: string) {
-  console.log('Getting filing event for', {companyNumber, accountsDate})
-  const pool = getPostgresPool()
-  //todo: should only load filing events into postgres if the one being looked for doesn't already exist
-  await loadFilingEventsIntoPostgres(companyNumber, pool)
-  const filingEvent = await pool.query(`
+async function attemptGetEventFromDb(companyNumber: string, accountsDate: string, pool: Pool) {
+  return await pool.query(`
               SELECT id                 AS _id,
                      description_code   AS "descriptionCode",
                      description,
@@ -130,6 +134,17 @@ async function getFilingEvent(companyNumber: string, accountsDate: string) {
                 AND description_values ->> 'made_up_date' = $2
     `, [companyNumber, accountsDate])
     .then(res => res.rows[0] as { _id: string, descriptionCode: string, description: string, descriptionValues: { made_up_date: string }, filingDate: string, barcode: string, type: string })
+}
+
+async function getFilingEvent(companyNumber: string, accountsDate: string) {
+  // console.log('Getting filing event for', {companyNumber, accountsDate})
+  const pool = getPostgresPool()
+  let filingEvent = await attemptGetEventFromDb(companyNumber, accountsDate, pool)
+  if (!filingEvent) {
+    //only load filing events into postgres if the one being looked for doesn't already exist
+    await loadFilingEventsIntoPostgres(companyNumber, pool)
+    filingEvent = await attemptGetEventFromDb(companyNumber, accountsDate, pool)
+  }
   await pool.end()
   if (!filingEvent) throw new Error(`Cant find filing event for companyNumber=${companyNumber} and accountsDate=${accountsDate}`)
   return filingEvent
@@ -140,7 +155,7 @@ async function saveMongoAccounts(accounts: MongoAccounts) {
 }
 
 // run main function
-await loadAccountsFromArelleJson()
+await loadAccountsFromArelleJson(100_000)
 
 
 

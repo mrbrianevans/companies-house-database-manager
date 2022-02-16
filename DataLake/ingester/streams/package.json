@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "watch": "tsc --build --watch",
     "clean": "tsc -b --clean"
   },
   "devDependencies": {

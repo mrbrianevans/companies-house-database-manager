@@ -1,7 +1,7 @@
-import {Pool} from "pg";
+import pg from "pg";
 
-export const getPostgresPool = (): Pool => {
-  return new Pool({
+export const getPostgresPool = (): pg.Pool => {
+  return new pg.Pool({
     host: process.env.PGHOST,
     user: process.env.PGUSER,
     password: process.env.PGPASSWORD,
