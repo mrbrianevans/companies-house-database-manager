@@ -1,13 +1,14 @@
 {
   "name": "companies-house-streams",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "clean": "tsc -b --clean"
   },
   "devDependencies": {
     "@types/pg": "^8.6.1",
-    "typescript": "^4.2.3"
+    "typescript": "^4.5.5"
   },
   "dependencies": {
     "axios": "^0.24.0",
