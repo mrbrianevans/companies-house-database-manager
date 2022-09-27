@@ -7,7 +7,9 @@ import {getMongoClient} from "../getMongoClient";
 import axios from "axios";
 import {getCompaniesHouseRateLimit, RateLimitHeaders} from "./CompaniesHouseApi";
 import {getPostgresPool} from "../getPostgresPool";
-import {MongoAccounts} from "./MongoAccounts";
+import {AccountsFacts, MongoAccounts} from "./MongoAccounts";
+import {loadFilingEventsIntoPostgres} from "../getMissingFilingEvents";
+import {attemptGetEventFromDb} from "./loadAccountsFromArelleJson";
 
 
 async function loadAccountsFromPostgres() {
@@ -21,7 +23,7 @@ async function loadAccountsFromPostgres() {
                                         csv_scanned         AS "csvScanned"
                                  FROM accounts_scanned
                                  ORDER BY accounts_date DESC, company_number
-                                 LIMIT 100000`)
+                                 LIMIT 10000000`)
   const pgStream = client.query(query)
   await new Promise((resolve, reject) => {
     pgStream
@@ -52,45 +54,34 @@ async function loadAccountsIntoMongo({
                                      }: { pool: Pool, accountScanned: { companyNumber: string, accountsDate: string, numberOfFacts: number, csvScanned: Date }, mongo?: MongoClient }) {
   const {companyNumber, accountsDate, numberOfFacts, csvScanned} = accountScanned
   const facts = await pool.query(
-    `SELECT start_date::TEXT, label, value, end_date::TEXT
+      `SELECT start_date::TEXT, label, value, end_date::TEXT
      FROM company_accounts
      WHERE company_number = $1
        AND captured BETWEEN ($2::TIMESTAMP - '1 second'::INTERVAL) AND ($2::TIMESTAMP + '1 second'::INTERVAL)`,
-    [companyNumber, csvScanned]
-  ).then(res => res.rows.map(i => convertCompanyAccountsDatabaseItemToItem(i)).map(({
-                                                                                      label,
-                                                                                      value,
-                                                                                      startDate,
-                                                                                      endDate
-                                                                                    }) => ({
-    label,
-    value,
-    startDate: startDate ?? undefined,
-    endDate
-  })).map(f => {
-    if (!f.startDate) delete f.startDate
-    return f
-  }))
+      [companyNumber, csvScanned]
+    )
+    .then(res => res.rows
+      .map(i => convertCompanyAccountsDatabaseItemToItem(i))
+      .map(f => {
+        let newFact: AccountsFacts = {...f, endDate: f.endDate.toString(), startDate: f.startDate?.toString()}
+        if (!newFact.startDate) delete newFact.startDate
+        return newFact
+      }))
   if (facts.length !== numberOfFacts) {
-    // console.log(facts.length, 'out of', numberOfFacts, 'facts for', companyNumber, accountsDate, 'scanned', csvScanned)
+    console.log(facts.length, 'out of', numberOfFacts, 'facts for', companyNumber, accountsDate, 'scanned', csvScanned)
     return
   }
 
-  const filingEvent = await pool.query(`
-                      SELECT id AS                 _id,
-                             description_code AS   "descriptionCode",
-                             description,
-                             description_values AS "descriptionValues",
-                             filing_date::text  AS "filingDate",
-                             barcode,
-                             type
-                      FROM filing_events
-                      WHERE company_number = $1
-                        AND description_values ->> 'made_up_date' = $2
-      `,
-      [companyNumber, accountsDate])
-    .then(res => res.rows[0])
-  if (!filingEvent) return
+  let filingEvent = await attemptGetEventFromDb(companyNumber, accountsDate, pool)
+  if (!filingEvent) {
+    //only load filing events into postgres if the one being looked for doesn't already exist
+    await loadFilingEventsIntoPostgres(companyNumber, pool)
+    filingEvent = await attemptGetEventFromDb(companyNumber, accountsDate, pool)
+  }
+  if (!filingEvent) {
+    console.log('Couldn\'t find filing event for', companyNumber, accountsDate)
+    return
+  }
   // filingEvent ??= await getFilingEventFromApi(companyNumber, accountsDate)
   const document: Omit<MongoAccounts, '_id'> = {
     companyNumber,

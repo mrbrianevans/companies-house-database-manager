@@ -28,7 +28,7 @@ fi
 tmp_zipname="$files_dir/$name-$latest.zip"
 tmp_filename="$files_dir/$name-$latest.$file_ext"
 
-if test -f "$tmp_zipname"; then
+if test -f "$tmp_zipname" || test -f "$tmp_filename"; then
 	echo "Already downloaded $name ZIP"
 else
 	echo "Downloading $name zip"

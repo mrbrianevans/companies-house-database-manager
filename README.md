@@ -1,5 +1,11 @@
 # Companies House database manager
 
+This was an attempt at maintaining a database of Companies House public data.
+Since doing this, I have started again from scratch doing things slightly differently with
+what I learnt from this project. There are many useful scripts and techniques in here, so I
+have made it publicly available for everyone's benefit, but don't expect it all to be perfect.
+I am no longer working on improving this repository (hence the archived status).
+
 ## Docker usage
 
 Docker is used by this database manager to run the database engines and data loading scripts. Docker compose

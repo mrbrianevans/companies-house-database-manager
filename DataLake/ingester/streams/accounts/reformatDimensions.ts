@@ -1,12 +1,23 @@
 import * as fs from "node:fs/promises";
 import {ArelleDimensions, Concept} from "./ArelleJsonAccounts";
 
+async function getDimensions(): Promise<Map<string, string>> {
+  const dimensionsFilename = 'N:\\CompaniesHouse\\Accounts\\dimensions.json'
+  const exists = await fs.stat(dimensionsFilename)
+  if (exists) {
+    const fileContents = await fs.readFile(dimensionsFilename)
+    const object: Record<string, string> = JSON.parse(fileContents.toString())
+    return new Map(Object.entries(object))
+  } else {
+    return new Map(Object.entries({None: 'None'}))
+  }
+}
+
 async function reformatDimensions() {
-  const fileContents = await fs.readFile('C:\\Users\\bme\\projects\\companies-house-database-manager\\samples\\financials\\jsonDimensions.json')
+  const fileContents = await fs.readFile('C:\\Users\\bme\\projects\\companies-house-database-manager\\samples\\financials\\ukbusDimensions.json')
   const dimensions: ArelleDimensions = JSON.parse(fileContents.toString('utf8'))
 
-  const map: Map<string, string> = new Map()
-  map.set('None', 'None') // default value
+  const map: Map<string, string> = await getDimensions()
   /** recursive closure that adds entries to map */
   const readConcept = (concept: Concept) => {
     if (JSON.parse(concept[2].usable ?? 'false') || true) {

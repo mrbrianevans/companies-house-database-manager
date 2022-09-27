@@ -1,4 +1,4 @@
-FROM node:17-buster
+FROM node:18
 
 # install pm2 to manage processes
 RUN npm install -g pm2@latest
